@@ -6,7 +6,8 @@ import { useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Code, Users, Zap, Github, ArrowRight, LogOut, User, Mail } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Code, Users, Zap, Github, ArrowRight, LogOut, User, Mail, Settings } from "lucide-react"
 import { handleLogout } from "@/lib/auth-utils"
 
 export default function DashboardPage() {
@@ -56,23 +57,33 @@ export default function DashboardPage() {
               
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                    <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  </div>
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={session?.user?.image || `https://github.com/${session?.user?.githubUsername}.png`} alt={session?.user?.name || 'User'} />
+                    <AvatarFallback className="bg-indigo-600 text-white text-sm font-medium">
+                      {session?.user?.name?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="text-sm">
                     <p className="font-medium text-gray-700 dark:text-gray-200">{session?.user?.name}</p>
                     <p className="text-gray-500 dark:text-gray-400">{session?.user?.email}</p>
                   </div>
                 </div>
                 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                >
-                  <LogOut className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Link href="/profile">
+                    <Button variant="ghost" size="sm" className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                      <Settings className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogout}
+                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -93,8 +104,8 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
             <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
               <CardHeader>
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mb-4">
-                  <Code className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center mb-4">
+                  <Code className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <CardTitle className="text-gray-700 dark:text-gray-200">Start Debugging</CardTitle>
                 <CardDescription className="text-gray-600 dark:text-gray-400">
@@ -103,7 +114,7 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <Link href="/debugger">
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                  <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
                     Get Started
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>

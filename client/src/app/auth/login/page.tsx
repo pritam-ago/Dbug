@@ -24,6 +24,7 @@ export default function LoginPage() {
   const handleGitHubLogin = async () => {
     setIsLoading(true)
     try {
+      // Sign in with GitHub - user creation happens automatically in the callback
       await signIn('github', { 
         callbackUrl: '/dashboard',
         redirect: false 
@@ -59,9 +60,9 @@ export default function LoginPage() {
             <h1 className="text-2xl font-bold text-gray-700 font-['Space_Grotesk']">DBug</h1>
           </div>
 
-          <CardTitle className="text-2xl text-gray-700 font-['Space_Grotesk']">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl text-gray-700 font-['Space_Grotesk']">Welcome to DBug</CardTitle>
           <CardDescription className="text-gray-600 font-['DM_Sans']">
-            Sign in to continue debugging collaboratively
+            Continue with GitHub to start debugging collaboratively
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -73,7 +74,7 @@ export default function LoginPage() {
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Signing in...
+                Connecting to GitHub...
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -84,11 +85,8 @@ export default function LoginPage() {
           </Button>
 
           <div className="text-center">
-            <p className="text-gray-600 text-sm font-['DM_Sans']">
-              Don't have an account?{" "}
-              <Link href="/auth/signup" className="text-indigo-600 hover:text-indigo-700 hover:underline font-medium">
-                Sign up
-              </Link>
+            <p className="text-sm text-gray-500 font-['DM_Sans']">
+              By continuing, you agree to our terms and privacy policy
             </p>
           </div>
         </CardContent>

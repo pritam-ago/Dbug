@@ -40,7 +40,6 @@ const userSchema = new Schema<IUser>({
 });
 
 userSchema.index({ githubUsername: 1 });
-userSchema.index({ githubId: 1 });
 
 userSchema.virtual('id').get(function(this: IUser) {
   return this._id.toHexString();

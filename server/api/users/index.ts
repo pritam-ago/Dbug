@@ -1,48 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server'
+import express from 'express'
 import { connectDB } from '../../db/connect'
 import User from '../../db/models/User'
 
-export async function POST(request: NextRequest) {
+const router = express.Router()
+
+// Create or update user (upsert)
+router.post('/', async (req, res) => {
   try {
     await connectDB()
     
-    const body = await request.json()
-    const { githubId, githubUsername, email, name, avatarUrl } = body
+    const { githubId, githubUsername, email, name, avatarUrl } = req.body
     
     // Validate required fields
     if (!githubId || !githubUsername || !email || !name) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
+      return res.status(400).json({ error: 'Missing required fields' })
     }
     
-    // Check if user already exists
-    const existingUser = await User.findOne({ 
-      $or: [{ githubId }, { email }] 
-    })
+    // Use findOneAndUpdate with upsert to create or update user
+    const user = await User.findOneAndUpdate(
+      { githubId }, // Find by GitHub ID
+      {
+        githubId,
+        githubUsername,
+        email,
+        name,
+        avatarUrl,
+        updatedAt: new Date()
+      },
+      {
+        upsert: true, // Create if doesn't exist, update if exists
+        new: true, // Return the updated document
+        setDefaultsOnInsert: true // Set default values on insert
+      }
+    )
     
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'User already exists' },
-        { status: 409 }
-      )
-    }
+    console.log(`User ${user.githubUsername} ${user._id ? 'updated' : 'created'} in MongoDB`)
     
-    // Create new user
-    const user = new User({
-      githubId,
-      githubUsername,
-      email,
-      name,
-      avatarUrl,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    })
-    
-    await user.save()
-    
-    return NextResponse.json({
+    res.json({
       success: true,
       user: {
         id: user._id,
@@ -50,20 +44,20 @@ export async function POST(request: NextRequest) {
         githubUsername: user.githubUsername,
         email: user.email,
         name: user.name,
-        avatarUrl: user.avatarUrl
+        avatarUrl: user.avatarUrl,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       }
     })
     
   } catch (error) {
-    console.error('User creation error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('User upsert error:', error)
+    res.status(500).json({ error: 'Internal server error' })
   }
-}
+})
 
-export async function GET(request: NextRequest) {
+// Get all users
+router.get('/', async (req, res) => {
   try {
     await connectDB()
     
@@ -76,16 +70,15 @@ export async function GET(request: NextRequest) {
       createdAt: 1 
     })
     
-    return NextResponse.json({
+    res.json({
       success: true,
       users
     })
     
   } catch (error) {
     console.error('Users fetch error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    res.status(500).json({ error: 'Internal server error' })
   }
-}
+})
+
+module.exports = router

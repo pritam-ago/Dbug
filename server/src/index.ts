@@ -21,6 +21,10 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'DBug Server is running' })
 })
 
+// API Routes
+app.use('/api/users', require('../api/users'))
+app.use('/api/users/github', require('../api/users/github'))
+
 // NextAuth is now handled by the client-side Next.js app
 
 app.listen(PORT, async () => {
