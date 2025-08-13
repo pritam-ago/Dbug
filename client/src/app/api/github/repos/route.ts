@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       )
     }
-    
+
     const serverResponse = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000'}/api/github/repos`, {
       headers: {
         'Authorization': `Bearer ${session.user.githubAccessToken}`,

@@ -22,19 +22,33 @@ import {
   X,
   GitBranch,
   Zap,
+  Terminal,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
-const defaultCode = `# Python Example - Find bugs in this code
+const defaultCode = `# Python Sandbox Example - Test your code safely
 def calculate_average(numbers):
+    if not numbers:
+        return "Error: Cannot calculate average of empty list"
     total = 0
     for num in numbers:
         total += num
     return total / len(numbers)
 
-# This will cause a division by zero error
-result = calculate_average([])
-print(f"Average: {result}")`
+# Test with different inputs
+test_cases = [[1, 2, 3, 4, 5], [10, 20, 30], []]
+for numbers in test_cases:
+    result = calculate_average(numbers)
+    print(f"Average of {numbers}: {result}")
+
+# You can also test other Python features
+print("\\nTesting list comprehensions:")
+squares = [x**2 for x in range(5)]
+print(f"Squares: {squares}")
+
+print("\\nTesting f-strings:")
+name = "Sandbox"
+print(f"Hello from {name}!")`
 
 const sampleFileContents: Record<string, { content: string; language: string }> = {
   "main.py": {
@@ -42,17 +56,33 @@ const sampleFileContents: Record<string, { content: string; language: string }> 
     language: "python",
   },
   "app.js": {
-    content: `// JavaScript Application
-function initApp() {
-    console.log("App initialized");
-    setupEventListeners();
+    content: `// JavaScript Sandbox Example - Test your code safely
+function fibonacci(n) {
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
-function setupEventListeners() {
-    document.addEventListener('DOMContentLoaded', initApp);
+// Test Fibonacci sequence
+console.log("Fibonacci sequence:");
+for (let i = 0; i < 10; i++) {
+    console.log(\`fib(\${i}) = \${fibonacci(i)}\`);
 }
 
-initApp();`,
+// Test modern JavaScript features
+console.log("\\nTesting array methods:");
+const numbers = [1, 2, 3, 4, 5];
+const doubled = numbers.map(n => n * 2);
+const evenNumbers = numbers.filter(n => n % 2 === 0);
+const sum = numbers.reduce((acc, n) => acc + n, 0);
+
+console.log("Original:", numbers);
+console.log("Doubled:", doubled);
+console.log("Even numbers:", evenNumbers);
+console.log("Sum:", sum);
+
+// Test template literals and arrow functions
+const greet = (name) => \`Hello, \${name}! Welcome to the sandbox!\`;
+console.log("\\n" + greet("Developer"));`,
     language: "javascript",
   },
   "Header.tsx": {
@@ -155,6 +185,8 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
     }
   }, [repoFullName, branch])
 
+
+
   const importRepository = async (repoName: string, repoBranch: string) => {
     setIsImporting(true)
     try {
@@ -251,37 +283,71 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
     const currentFile = getCurrentFile()
     if (!currentFile) return
 
+    // Check if language is supported by sandbox
+    if (!['python', 'javascript'].includes(currentFile.language)) {
+      const timestamp = new Date().toLocaleTimeString()
+      setTerminalOutput((prev) => [
+        ...prev, 
+        `[${timestamp}] ❌ Language ${currentFile.language} is not supported in sandbox mode.`,
+        `Supported languages: Python, JavaScript`,
+        `To use sandbox mode, change the file language to Python or JavaScript.`,
+        ""
+      ])
+      return
+    }
+
     setIsRunning(true)
     setIsTerminalOpen(true)
 
     const timestamp = new Date().toLocaleTimeString()
-    setTerminalOutput((prev) => [...prev, `[${timestamp}] Running ${currentFile.name}...`, ""])
+    setTerminalOutput((prev) => [...prev, `[${timestamp}] 🚀 Executing ${currentFile.name} in sandbox...`, ""])
 
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000'}/api/sandbox/execute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: currentFile.content,
+          language: currentFile.language === 'javascript' ? 'javascript' : 'python',
+          timeout: 30000 // 30 seconds
+        }),
+      })
+
+      const result = await response.json()
       const newOutput = [...terminalOutput]
 
-      if (currentFile.language === "python") {
-        if (currentFile.content.includes("calculate_average([])")) {
-          newOutput.push(
-            "Traceback (most recent call last):",
-            '  File "main.py", line 8, in <module>',
-            "    result = calculate_average([])",
-            '  File "main.py", line 5, in calculate_average',
-            "    return total / len(numbers)",
-            "ZeroDivisionError: division by zero",
-            "",
-          )
-        } else {
-          newOutput.push("Code executed successfully!", "Average: 15.5", "")
+      if (result.success) {
+        newOutput.push(
+          `✅ Code executed successfully in ${result.executionTime}ms`,
+          ""
+        )
+        
+        if (result.output) {
+          newOutput.push("📤 Output:", result.output, "")
         }
       } else {
-        newOutput.push(`Executed ${currentFile.name} successfully!`, "Output: Hello, World!", "")
+        newOutput.push(
+          `❌ Execution failed: ${result.error}`,
+          ""
+        )
       }
 
       newOutput.push(`[${new Date().toLocaleTimeString()}] Process finished.`)
       setTerminalOutput(newOutput)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      const newOutput = [...terminalOutput]
+      newOutput.push(
+        `❌ Execution error: ${errorMessage}`,
+        `[${new Date().toLocaleTimeString()}] Process finished with error.`,
+        ""
+      )
+      setTerminalOutput(newOutput)
+    } finally {
       setIsRunning(false)
-    }, 1500)
+    }
   }
 
   const handleAskAI = async () => {
@@ -402,6 +468,28 @@ These are common edge cases that should be handled with proper input validation.
 
   const currentFile = getCurrentFile()
 
+     // Keyboard shortcuts
+   useEffect(() => {
+     const handleKeyDown = (event: KeyboardEvent) => {
+       // Ctrl+Enter or Cmd+Enter to run code
+       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+         event.preventDefault()
+         if (['python', 'javascript'].includes(currentFile?.language || '')) {
+           handleRunCode()
+         }
+       }
+       
+       // Ctrl+Shift+T or Cmd+Shift+T to toggle terminal
+       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'T') {
+         event.preventDefault()
+         setIsTerminalOpen(!isTerminalOpen)
+       }
+     }
+
+     document.addEventListener('keydown', handleKeyDown)
+     return () => document.removeEventListener('keydown', handleKeyDown)
+   }, [currentFile?.language, isTerminalOpen])
+
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Import Loading Indicator */}
@@ -433,6 +521,10 @@ These are common edge cases that should be handled with proper input validation.
               <Zap className="h-3 w-3" />
               OpenAI
             </Badge>
+            <Badge variant="outline" className="text-xs flex items-center gap-1">
+              <Terminal className="h-3 w-3" />
+              Sandbox
+            </Badge>
           </div>
         </div>
       </div>
@@ -452,30 +544,38 @@ These are common edge cases that should be handled with proper input validation.
           <div className="border-b bg-card">
             <div className="flex items-center overflow-x-auto border-b">
               {openFiles.map((file, index) => (
-                <div
-                  key={`${file.name}-${index}`}
-                  className={`flex items-center gap-2 px-3 py-2 border-r cursor-pointer hover:bg-accent/50 min-w-0 ${
-                    index === activeFileIndex ? "bg-background border-b-2 border-b-primary" : ""
-                  }`}
-                  onClick={() => setActiveFileIndex(index)}
-                >
-                  <File className="h-3 w-3 flex-shrink-0" />
-                  <span className="text-sm truncate max-w-32">{file.name}</span>
-                  {file.isDirty && <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0" />}
-                  {openFiles.length > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground flex-shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        closeFile(index)
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
+                                  <div
+                    key={`${file.name}-${index}`}
+                    className={`flex items-center gap-2 px-3 py-2 border-r cursor-pointer hover:bg-accent/50 min-w-0 ${
+                      index === activeFileIndex ? "bg-background border-b-2 border-b-primary" : ""
+                    }`}
+                    onClick={() => setActiveFileIndex(index)}
+                  >
+                    <File className="h-3 w-3 flex-shrink-0" />
+                    <span className="text-sm truncate max-w-32">{file.name}</span>
+                    {file.isDirty && <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0" />}
+                    {['python', 'javascript'].includes(file.language) && (
+                      <div className="relative group">
+                        <Zap className="h-3 w-3 text-green-500 flex-shrink-0" />
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                          Sandbox Ready
+                        </div>
+                      </div>
+                    )}
+                    {openFiles.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground flex-shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          closeFile(index)
+                        }}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
               ))}
               <Button
                 variant="ghost"
@@ -489,40 +589,72 @@ These are common edge cases that should be handled with proper input validation.
 
             <div className="px-4 py-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleFileSave}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Separator orientation="vertical" className="h-6" />
-                  <select
-                    value={currentFile?.language || "plaintext"}
-                    onChange={(e) => {
-                      const updatedFiles = [...openFiles]
-                      updatedFiles[activeFileIndex] = {
-                        ...updatedFiles[activeFileIndex],
-                        language: e.target.value,
-                      }
-                      setOpenFiles(updatedFiles)
-                    }}
-                    className="px-3 py-1 rounded border bg-background text-foreground text-sm"
-                  >
-                    <option value="python">Python</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="typescript">TypeScript</option>
-                    <option value="markdown">Markdown</option>
-                    <option value="json">JSON</option>
-                    <option value="css">CSS</option>
-                    <option value="html">HTML</option>
-                    <option value="plaintext">Plain Text</option>
-                  </select>
-                </div>
+                                 <div className="flex items-center gap-2">
+                   <Button variant="outline" size="sm" onClick={handleFileSave}>
+                     <Save className="h-4 w-4 mr-2" />
+                     Save
+                   </Button>
+                   <Separator orientation="vertical" className="h-6" />
+                   <select
+                     value={currentFile?.language || "plaintext"}
+                     onChange={(e) => {
+                       const updatedFiles = [...openFiles]
+                       updatedFiles[activeFileIndex] = {
+                         ...updatedFiles[activeFileIndex],
+                         language: e.target.value,
+                       }
+                       setOpenFiles(updatedFiles)
+                     }}
+                     className="px-3 py-1 rounded border bg-background text-foreground text-sm"
+                   >
+                     <option value="python">Python</option>
+                     <option value="javascript">JavaScript</option>
+                     <option value="typescript">TypeScript</option>
+                     <option value="markdown">Markdown</option>
+                     <option value="json">JSON</option>
+                     <option value="css">CSS</option>
+                     <option value="html">HTML</option>
+                     <option value="plaintext">Plain Text</option>
+                   </select>
+                   {['python', 'javascript'].includes(currentFile?.language || '') && (
+                     <>
+                       <Separator orientation="vertical" className="h-6" />
+                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                         <Zap className="h-3 w-3" />
+                         <span>Sandbox Ready</span>
+                       </div>
+                     </>
+                   )}
+                   <Separator orientation="vertical" className="h-6" />
+                   <Button 
+                     variant={isTerminalOpen ? "default" : "outline"}
+                     size="sm" 
+                     onClick={() => setIsTerminalOpen(!isTerminalOpen)}
+                     className="flex items-center gap-2"
+                     title={isTerminalOpen ? "Hide Terminal (Ctrl+Shift+T)" : "Show Terminal (Ctrl+Shift+T)"}
+                   >
+                     <Terminal className="h-4 w-4" />
+                     {isTerminalOpen ? "Hide" : "Show"} Terminal
+                   </Button>
+                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleRunCode}>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRunCode}
+                    disabled={!['python', 'javascript'].includes(currentFile?.language || '')}
+                    title={!['python', 'javascript'].includes(currentFile?.language || '') ? 'Only Python and JavaScript are supported in sandbox mode' : 'Run code in sandbox environment (Ctrl+Enter)'}
+                  >
                     <Play className="h-4 w-4 mr-2" />
                     Run Code
                   </Button>
+                  {['python', 'javascript'].includes(currentFile?.language || '') && (
+                    <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                      <Zap className="h-3 w-3" />
+                      Sandbox
+                    </Badge>
+                  )}
                   <Button size="sm" onClick={handleAskAI} disabled={isAnalyzing}>
                     <MessageSquare className="h-4 w-4 mr-2" />
                     {isAnalyzing ? "Analyzing..." : "Ask AI"}
@@ -536,7 +668,7 @@ These are common edge cases that should be handled with proper input validation.
             </div>
           </div>
 
-          <div className={`flex-1 flex flex-col ${isTerminalOpen ? "h-1/2" : ""}`}>
+                     <div className={`flex-1 flex flex-col ${isTerminalOpen ? "min-h-0" : ""}`}>
             <Editor
               height="100%"
               language={currentFile?.language || "plaintext"}
@@ -561,6 +693,26 @@ These are common edge cases that should be handled with proper input validation.
                 cursorStyle: "line",
               }}
             />
+            
+            {/* Sandbox Status Bar */}
+            {['python', 'javascript'].includes(currentFile?.language || '') && (
+              <div className="border-t bg-muted/50 px-4 py-2 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Zap className="h-3 w-3 text-green-500" />
+                  <span>Sandbox Mode Active</span>
+                  <span className="text-xs">• {currentFile?.language === 'python' ? 'Python 3.x' : 'JavaScript ES6+'}</span>
+                </div>
+                                 <div className="flex items-center gap-2 text-muted-foreground">
+                   <span>Timeout: 30s</span>
+                   <span>•</span>
+                   <span>Isolated Execution</span>
+                   <span>•</span>
+                   <span>Ctrl+Enter to run</span>
+                   <span>•</span>
+                   <span>Ctrl+Shift+T to toggle terminal</span>
+                 </div>
+              </div>
+            )}
           </div>
 
           <TerminalComponent
