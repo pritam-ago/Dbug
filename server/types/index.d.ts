@@ -8,6 +8,7 @@ export interface User {
   githubUsername?: string;
   githubAccessToken?: string;
   avatar?: string;
+  avatarUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,6 +21,7 @@ export interface IUser extends Document {
   githubUsername?: string;
   githubAccessToken?: string;
   avatar?: string;
+  avatarUrl?: string;
   createdAt: Date;
   updatedAt: Date;
   getPublicProfile(): Partial<IUser>;

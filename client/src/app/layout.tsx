@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Space_Grotesk, DM_Sans } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Providers } from "@/components/providers/session-provider"
 import "./globals.css"
 
 const spaceGrotesk = Space_Grotesk({
@@ -30,9 +31,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable} antialiased`} suppressHydrationWarning>
       <body className="font-['DM_Sans'] antialiased">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+        <Providers>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            {children}
+          </ThemeProvider>
+        </Providers>
       </body>
     </html>
   )

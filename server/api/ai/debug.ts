@@ -1,8 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+import OpenAI from 'openai'
+import dotenv from 'dotenv'
 import { getServerSession } from 'next-auth';
 import { AIClient } from '../../utils/aiClient';
 import { createSuccessResponse, createErrorResponse, createUnauthorizedResponse } from '../../utils/response';
 import { DebugRequest } from '../../types';
+
+dotenv.config()
 
 export async function POST(request: NextRequest) {
   try {

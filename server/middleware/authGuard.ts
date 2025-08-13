@@ -1,14 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { NextRequest, NextResponse } from 'next/server'
+import { getToken } from 'next-auth/jwt'
+import dotenv from 'dotenv'
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import helmet from 'helmet';
 import { ExtendedUser } from '../types';
 
+dotenv.config()
+
 export const createAuthGuard = (handler: Function) => {
   return async (req: NextRequest) => {
     try {
-      const session = await getServerSession();
+      const session = await getToken({ req });
       
       if (!session) {
         return NextResponse.json(
@@ -31,7 +34,7 @@ export const requireRole = (requiredRole: string) => {
   return (handler: Function) => {
     return async (req: NextRequest) => {
       try {
-        const session = await getServerSession();
+        const session = await getToken({ req });
         
         if (!session) {
           return NextResponse.json(
@@ -62,7 +65,7 @@ export const requireRole = (requiredRole: string) => {
 export const requireGitHubAccess = (handler: Function) => {
   return async (req: NextRequest) => {
     try {
-      const session = await getServerSession();
+      const session = await getToken({ req });
       
       if (!session) {
         return NextResponse.json(

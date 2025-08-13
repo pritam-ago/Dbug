@@ -16,10 +16,13 @@ const userSchema = new Schema<IUser>({
   },
   githubId: {
     type: String,
+    required: true,
+    unique: true,
     sparse: true,
   },
   githubUsername: {
     type: String,
+    required: true,
     trim: true,
   },
   githubAccessToken: {
@@ -29,13 +32,15 @@ const userSchema = new Schema<IUser>({
   avatar: {
     type: String,
   },
+  avatarUrl: {
+    type: String,
+  },
 }, {
   timestamps: true,
 });
 
-userSchema.index({ email: 1 });
-userSchema.index({ githubId: 1 });
 userSchema.index({ githubUsername: 1 });
+userSchema.index({ githubId: 1 });
 
 userSchema.virtual('id').get(function(this: IUser) {
   return this._id.toHexString();
@@ -57,6 +62,7 @@ userSchema.methods.getPublicProfile = function(this: IUser): Partial<IUser> {
     name: this.name,
     githubUsername: this.githubUsername,
     avatar: this.avatar,
+    avatarUrl: this.avatarUrl,
     createdAt: this.createdAt,
   };
 };

@@ -1,4 +1,7 @@
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 let isConnected = false;
 let connection: mongoose.Connection | null = null;
@@ -73,4 +76,16 @@ export const getConnectionInfo = () => {
   };
 };
 
-export const clientPromise = mongoose.connect(process.env.MONGODB_URI!);
+export const clientPromise = (() => {
+  try {
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      console.warn('MONGODB_URI not found, MongoDB adapter will not work');
+      return null;
+    }
+    return mongoose.connect(mongoUri);
+  } catch (error) {
+    console.error('Failed to create MongoDB connection for adapter:', error);
+    return null;
+  }
+})();

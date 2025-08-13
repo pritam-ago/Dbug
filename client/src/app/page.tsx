@@ -1,9 +1,14 @@
+'use client'
+
 import Link from "next/link"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Code, Users, Zap, Github, ArrowRight, CheckCircle } from "lucide-react"
 
 export default function WelcomePage() {
+  const { data: session } = useSession()
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800">
       <div className="relative overflow-hidden">
@@ -30,25 +35,39 @@ export default function WelcomePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
-                <Link href="/auth/signup">
-                  <Button
-                    size="lg"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
-                  >
-                    Get Started
-                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
+                {session ? (
+                  <Link href="/dashboard">
+                    <Button
+                      size="lg"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+                    >
+                      Go to Dashboard
+                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/auth/signup">
+                    <Button
+                      size="lg"
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 group"
+                    >
+                      Get Started
+                      <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                )}
 
-                <Link href="/auth/login">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="border-2 border-gray-300 hover:border-indigo-600 text-gray-700 hover:text-indigo-600 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-200 hover:scale-105 bg-transparent"
-                  >
-                    Sign In
-                  </Button>
-                </Link>
+                {!session && (
+                  <Link href="/auth/login">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-2 border-gray-300 hover:border-indigo-600 text-gray-700 hover:text-indigo-600 px-8 py-4 text-lg font-semibold rounded-xl transition-all duration-200 hover:scale-105 bg-transparent"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -130,14 +149,25 @@ export default function WelcomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <Link href="/auth/signup">
-              <Button
-                size="lg"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-12 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
-              >
-                Start Your Free Trial
-              </Button>
-            </Link>
+            {session ? (
+              <Link href="/dashboard">
+                <Button
+                  size="lg"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-12 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                >
+                  Go to Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/auth/signup">
+                <Button
+                  size="lg"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-12 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                >
+                  Start Your Free Trial
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Github, Code } from "lucide-react"
@@ -11,11 +12,12 @@ export default function LoginPage() {
 
   const handleGitHubLogin = async () => {
     setIsLoading(true)
-    console.log("Logging in with GitHub...")
-    setTimeout(() => {
+    try {
+      await signIn('github', { callbackUrl: '/dashboard' })
+    } catch (error) {
+      console.error('Login error:', error)
       setIsLoading(false)
-      window.location.href = "/dashboard"
-    }, 2000)
+    }
   }
 
   return (

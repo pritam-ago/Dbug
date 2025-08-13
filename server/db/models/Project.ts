@@ -76,7 +76,7 @@ projectSchema.index({ collaborators: 1 });
 projectSchema.index({ isPublic: 1 });
 projectSchema.index({ 'githubRepo.fullName': 1 });
 projectSchema.index({ createdAt: -1 });
-projectSchema.index({ joinCode: 1 }, { unique: true });
+
 
 projectSchema.virtual('id').get(function(this: IProject) {
   return this._id.toHexString();
