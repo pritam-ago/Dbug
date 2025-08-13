@@ -14,7 +14,6 @@ import { getLanguageFromFileName } from "@/lib/utils"
 import {
   Play,
   MessageSquare,
-  FileIcon as FileOpen,
   Save,
   Sun,
   Moon,
@@ -22,10 +21,7 @@ import {
   File,
   X,
   GitBranch,
-  Database,
   Zap,
-  Cloud,
-  Menu,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -38,21 +34,7 @@ def calculate_average(numbers):
 
 # This will cause a division by zero error
 result = calculate_average([])
-print(f"Average: {result}")
-
-# JavaScript Example
-function findMax(arr) {
-    let max = arr[0];
-    for (let i = 1; i < arr.length; i++) {
-        if (arr[i] > max) {
-            max = arr[i];
-        }
-    }
-    return max;
-}
-
-// This will cause an error with empty array
-console.log(findMax([]));`
+print(f"Average: {result}")`
 
 const sampleFileContents: Record<string, { content: string; language: string }> = {
   "main.py": {
@@ -97,56 +79,6 @@ export const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
 };`,
     language: "typescript",
   },
-  "helpers.ts": {
-    content: `// Utility helper functions
-export const formatDate = (date: Date): string => {
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-};
-
-export const debounce = <T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func(...args), wait);
-  };
-};`,
-    language: "typescript",
-  },
-  "README.md": {
-    content: `# AI Code Debugger
-
-A powerful AI-powered code debugging tool that helps you identify and fix issues in your code.
-
-## Features
-
-- Multi-language support (Python, JavaScript, TypeScript)
-- Real-time AI analysis
-- File explorer with project structure
-- Dark/Light theme support
-- Git integration
-
-## Getting Started
-
-1. Open a file from the explorer
-2. Write or paste your code
-3. Click "Ask AI" to analyze for bugs
-4. Apply suggested fixes with one click
-
-## Supported Languages
-
-- Python (.py)
-- JavaScript (.js)
-- TypeScript (.ts, .tsx)
-- Markdown (.md)`,
-    language: "markdown",
-  },
 }
 
 const mockFileTree: FileNode[] = [
@@ -155,40 +87,12 @@ const mockFileTree: FileNode[] = [
     type: "folder",
     isOpen: true,
     children: [
-      {
-        name: "components",
-        type: "folder",
-        isOpen: true,
-        children: [
-          { name: "Header.tsx", type: "file" },
-          { name: "Sidebar.tsx", type: "file" },
-          { name: "Button.tsx", type: "file" },
-        ],
-      },
-      {
-        name: "utils",
-        type: "folder",
-        isOpen: false,
-        children: [
-          { name: "helpers.ts", type: "file" },
-          { name: "constants.ts", type: "file" },
-        ],
-      },
+      { name: "Header.tsx", type: "file" },
       { name: "main.py", type: "file" },
       { name: "app.js", type: "file" },
     ],
   },
-  {
-    name: "tests",
-    type: "folder",
-    isOpen: false,
-    children: [
-      { name: "test_main.py", type: "file" },
-      { name: "test_utils.js", type: "file" },
-    ],
-  },
   { name: "README.md", type: "file" },
-  { name: "package.json", type: "file" },
 ]
 
 export function CodeDebugger() {
@@ -207,7 +111,6 @@ export function CodeDebugger() {
   const [isPanelOpen, setIsPanelOpen] = useState(true)
   const [isFileExplorerOpen, setIsFileExplorerOpen] = useState(true)
   const [fileTree, setFileTree] = useState<FileNode[]>(mockFileTree)
-  const [currentBranch] = useState("feature/ai-debugger")
   const { theme, setTheme } = useTheme()
   const editorRef = useRef<any>(null)
   const [isTerminalOpen, setIsTerminalOpen] = useState(false)
@@ -219,21 +122,21 @@ export function CodeDebugger() {
       id: "1",
       user: "System",
       message: "Welcome to the AI Code Debugger chat room! Collaborate with your team and get AI assistance.",
-      timestamp: new Date(Date.now() - 300000),
+      timestamp: new Date("2024-01-01T10:00:00Z"),
       type: "system",
     },
     {
       id: "2",
       user: "Alice",
       message: "Hey team! I found a bug in the authentication module. Anyone available to help?",
-      timestamp: new Date(Date.now() - 240000),
+      timestamp: new Date("2024-01-01T10:01:00Z"),
       type: "user",
     },
     {
       id: "3",
       user: "Bob",
       message: "Can you share the error details?",
-      timestamp: new Date(Date.now() - 180000),
+      timestamp: new Date("2024-01-01T10:02:00Z"),
       type: "user",
     },
   ])
@@ -318,7 +221,7 @@ export function CodeDebugger() {
     const timestamp = new Date().toLocaleTimeString()
     setTerminalOutput((prev) => [...prev, `[${timestamp}] Running ${currentFile.name}...`, ""])
 
-    // Simulate code execution based on file type
+    // Simulate code execution
     setTimeout(() => {
       const newOutput = [...terminalOutput]
 
@@ -336,17 +239,6 @@ export function CodeDebugger() {
         } else {
           newOutput.push("Code executed successfully!", "Average: 15.5", "")
         }
-      } else if (currentFile.language === "javascript") {
-        if (currentFile.content.includes("findMax([])")) {
-          newOutput.push(
-            "TypeError: Cannot read property '0' of undefined",
-            "    at findMax (app.js:2:15)",
-            "    at app.js:10:13",
-            "",
-          )
-        } else {
-          newOutput.push("App initialized", "Maximum value: 42", "")
-        }
       } else {
         newOutput.push(`Executed ${currentFile.name} successfully!`, "Output: Hello, World!", "")
       }
@@ -359,6 +251,8 @@ export function CodeDebugger() {
 
   const handleAskAI = async () => {
     setIsAnalyzing(true)
+    // Close chat when AI panel opens
+    setIsChatOpen(false)
 
     setTimeout(() => {
       const mockResults: BugResult[] = [
@@ -367,12 +261,6 @@ export function CodeDebugger() {
           line: 8,
           message: "Division by zero error: Empty list passed to calculate_average function",
           fix: "Add a check for empty list before division",
-        },
-        {
-          type: "error",
-          line: 22,
-          message: "Cannot read property of undefined: Empty array passed to findMax function",
-          fix: "Add validation for empty array",
         },
         {
           type: "warning",
@@ -387,9 +275,7 @@ export function CodeDebugger() {
 
 1. **Division by Zero Error (Line 8)**: The calculate_average function doesn't handle empty lists, which causes a division by zero error.
 
-2. **Undefined Access Error (Line 22)**: The findMax function tries to access arr[0] on an empty array, returning undefined.
-
-3. **Performance Optimization (Line 3)**: Using Python's built-in sum() function would be more efficient than a manual loop.
+2. **Performance Optimization (Line 3)**: Using Python's built-in sum() function would be more efficient than a manual loop.
 
 These are common edge cases that should be handled with proper input validation.`)
 
@@ -416,12 +302,7 @@ These are common edge cases that should be handled with proper input validation.
     updateFileContent(newCode)
   }
 
-  const handleFileOpen = () => {
-    console.log("Opening file...")
-  }
-
   const handleFileSave = () => {
-    console.log("Saving file...")
     const updatedFiles = [...openFiles]
     updatedFiles[activeFileIndex] = {
       ...updatedFiles[activeFileIndex],
@@ -438,7 +319,7 @@ These are common edge cases that should be handled with proper input validation.
     if (!message.trim()) return
 
     const newMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: `msg-${Date.now()}`,
       user: "You",
       message: message,
       timestamp: new Date(),
@@ -447,29 +328,46 @@ These are common edge cases that should be handled with proper input validation.
 
     setChatMessages((prev) => [...prev, newMessage])
 
-    // Simulate AI or team responses
-    setTimeout(
-      () => {
-        const responses = [
-          "That's a great question! Let me analyze the code...",
-          "I see the issue. Try checking the validation logic on line 45.",
-          "Have you considered using a try-catch block there?",
-          "The error might be related to the async function handling.",
-          "Let me run a quick analysis on that code section.",
-        ]
+    // Simulate AI or team responses with deterministic timing
+    const responses = [
+      "That's a great question! Let me analyze the code...",
+      "I see the issue. Try checking the validation logic on line 45.",
+      "Have you considered using a try-catch block there?",
+      "The error might be related to the async function handling.",
+      "Let me run a quick analysis on that code section.",
+    ]
 
-        const aiResponse: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          user: "AI Assistant",
-          message: responses[Math.floor(Math.random() * responses.length)],
-          timestamp: new Date(),
-          type: "ai",
-        }
+    // Use a simple counter instead of Math.random() for deterministic behavior
+    const responseIndex = (chatMessages.length + 1) % responses.length
+    const responseDelay = 1000 + ((chatMessages.length + 1) * 500) % 2000
 
-        setChatMessages((prev) => [...prev, aiResponse])
-      },
-      1000 + Math.random() * 2000,
-    )
+    setTimeout(() => {
+      const aiResponse: ChatMessage = {
+        id: `ai-${Date.now()}`,
+        user: "AI Assistant",
+        message: responses[responseIndex],
+        timestamp: new Date(),
+        type: "ai",
+      }
+
+      setChatMessages((prev) => [...prev, aiResponse])
+    }, responseDelay)
+  }
+
+  const toggleAIPanel = () => {
+    setIsPanelOpen(!isPanelOpen)
+    // Close chat when AI panel opens
+    if (!isPanelOpen) {
+      setIsChatOpen(false)
+    }
+  }
+
+  const toggleChatRoom = () => {
+    setIsChatOpen(!isChatOpen)
+    // Close AI panel when chat opens
+    if (!isChatOpen) {
+      setIsPanelOpen(false)
+    }
   }
 
   const currentFile = getCurrentFile()
@@ -483,23 +381,15 @@ These are common edge cases that should be handled with proper input validation.
             <div className="flex items-center gap-2">
               <GitBranch className="h-4 w-4 text-muted-foreground" />
               <Badge variant="outline" className="text-xs">
-                {currentBranch}
+                main
               </Badge>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Integrations:</span>
             <Badge variant="secondary" className="text-xs flex items-center gap-1">
-              <Database className="h-3 w-3" />
-              Supabase
-            </Badge>
-            <Badge variant="secondary" className="text-xs flex items-center gap-1">
               <Zap className="h-3 w-3" />
               OpenAI
-            </Badge>
-            <Badge variant="secondary" className="text-xs flex items-center gap-1">
-              <Cloud className="h-3 w-3" />
-              Vercel
             </Badge>
           </div>
         </div>
@@ -516,7 +406,7 @@ These are common edge cases that should be handled with proper input validation.
           onToggle={() => setIsFileExplorerOpen(!isFileExplorerOpen)}
         />
 
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           <div className="border-b bg-card">
             <div className="flex items-center overflow-x-auto border-b">
               {openFiles.map((file, index) => (
@@ -558,16 +448,6 @@ These are common edge cases that should be handled with proper input validation.
             <div className="px-4 py-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {!isFileExplorerOpen && (
-                    <Button variant="outline" size="sm" onClick={() => setIsFileExplorerOpen(true)}>
-                      <Menu className="h-4 w-4 mr-2" />
-                      Files
-                    </Button>
-                  )}
-                  <Button variant="outline" size="sm" onClick={handleFileOpen}>
-                    <FileOpen className="h-4 w-4 mr-2" />
-                    Open
-                  </Button>
                   <Button variant="outline" size="sm" onClick={handleFileSave}>
                     <Save className="h-4 w-4 mr-2" />
                     Save
@@ -609,15 +489,6 @@ These are common edge cases that should be handled with proper input validation.
                   <Button variant="outline" size="sm" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                     {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsPanelOpen(!isPanelOpen)}
-                    className="md:hidden"
-                    title={isPanelOpen ? "Hide AI Debugger" : "Show AI Debugger"}
-                  >
-                    {isPanelOpen ? <X className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
-                  </Button>
                 </div>
               </div>
             </div>
@@ -646,7 +517,6 @@ These are common edge cases that should be handled with proper input validation.
                 roundedSelection: false,
                 readOnly: false,
                 cursorStyle: "line",
-                automaticLayout: true,
               }}
             />
           </div>
@@ -660,23 +530,58 @@ These are common edge cases that should be handled with proper input validation.
           />
         </div>
 
-        <AIDebuggerPanel
-          isOpen={isPanelOpen}
-          onToggle={() => setIsPanelOpen(!isPanelOpen)}
-          bugResults={bugResults}
-          aiExplanation={aiExplanation}
-          isAnalyzing={isAnalyzing}
-          onAskAI={handleAskAI}
-          onApplyFix={handleApplyFix}
-        />
+        {/* Right side panels - AI Panel and Chat Room */}
+        <div className="flex-shrink-0">
+          {isPanelOpen && (
+            <AIDebuggerPanel
+              isOpen={isPanelOpen}
+              onToggle={toggleAIPanel}
+              bugResults={bugResults}
+              aiExplanation={aiExplanation}
+              isAnalyzing={isAnalyzing}
+              onAskAI={handleAskAI}
+              onApplyFix={handleApplyFix}
+            />
+          )}
+          
+          {isChatOpen && (
+            <ChatRoom
+              isOpen={isChatOpen}
+              onToggle={toggleChatRoom}
+              chatMessages={chatMessages}
+              onlineUsers={onlineUsers}
+              onSendMessage={sendMessage}
+            />
+          )}
 
-        <ChatRoom
-          isOpen={isChatOpen}
-          onToggle={() => setIsChatOpen(!isChatOpen)}
-          chatMessages={chatMessages}
-          onlineUsers={onlineUsers}
-          onSendMessage={sendMessage}
-        />
+          {/* Toggle buttons column - always visible */}
+          {!isPanelOpen && !isChatOpen && (
+            <div className="w-12 border-l bg-card flex flex-col">
+              <div className="p-3 border-b flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleAIPanel}
+                  className="h-8 w-8 p-0"
+                  title="Open AI Debugger"
+                >
+                  <Zap className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex flex-col items-center justify-center flex-1 p-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleChatRoom}
+                  className="h-8 w-8 p-0"
+                  title="Open Chat Room"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

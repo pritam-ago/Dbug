@@ -38,32 +38,7 @@ export function ChatRoom({
   }
 
   if (!isOpen) {
-    return (
-      <div className="w-12 border-l bg-card flex flex-col">
-        <div className="p-3 border-b flex justify-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggle}
-            className="h-8 w-8 p-0"
-            title="Open Chat Room"
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="flex flex-col items-center justify-center flex-1 p-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            title="AI Chat"
-            onClick={onToggle}
-          >
-            <MessageSquare className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    )
+    return null
   }
 
   return (
@@ -158,7 +133,7 @@ export function ChatRoom({
             size="sm"
             className="text-xs bg-transparent"
             onClick={() => {
-              setNewMessage("I found the solution! Check line " + Math.floor(Math.random() * 50 + 1))
+              setNewMessage("I found the solution! Check line 25")
             }}
           >
             Share solution
