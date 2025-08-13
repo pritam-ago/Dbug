@@ -80,7 +80,7 @@ export default function SoloDebuggingPage() {
       
       <div className="relative z-10">
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700">
+        <header className="bg-background/80 backdrop-blur-sm border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center gap-3">
@@ -113,7 +113,7 @@ export default function SoloDebuggingPage() {
           {!showImport ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Create from Scratch */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
+              <Card className="bg-card/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
                 <CardHeader className="text-center">
                   <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Code className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
@@ -135,7 +135,7 @@ export default function SoloDebuggingPage() {
               </Card>
 
               {/* Import from GitHub */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
+                            <Card className="bg-card/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105">
                 <CardHeader className="text-center">
                   <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Github className="w-8 h-8 text-green-600 dark:text-green-400" />
@@ -153,14 +153,14 @@ export default function SoloDebuggingPage() {
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        <Loader2 className="w-5 h-4 mr-2 animate-spin" />
                         Loading...
                       </>
                     ) : (
                       <>
                         Browse Repositories
                         <ArrowRight className="w-5 h-5 ml-2" />
-                      </>
+                  </>
                     )}
                   </Button>
                 </CardContent>
@@ -181,7 +181,7 @@ export default function SoloDebuggingPage() {
               </div>
 
               {/* Repository List */}
-              <div className="bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+              <div className="bg-card/80 backdrop-blur-sm rounded-lg border border-border p-6">
                 <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-6 flex items-center gap-2">
                   <Github className="w-6 h-6" />
                   Your GitHub Repositories

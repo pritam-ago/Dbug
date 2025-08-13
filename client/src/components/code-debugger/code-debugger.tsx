@@ -750,7 +750,7 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
                     {['python', 'javascript'].includes(file.language) && (
                       <div className="relative group">
                         <Zap className="h-3 w-3 text-green-500 flex-shrink-0" />
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                           Sandbox Ready
                         </div>
                       </div>

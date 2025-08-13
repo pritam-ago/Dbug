@@ -385,7 +385,7 @@ export default function SandboxPage() {
                   {result.output && (
                     <div className="mb-2">
                       <strong>Output:</strong>
-                      <pre className="mt-1 p-2 bg-gray-100 dark:bg-gray-800 rounded text-sm overflow-x-auto">
+                      <pre className="mt-1 p-2 bg-muted rounded text-sm overflow-x-auto">
                         {result.output}
                       </pre>
                     </div>

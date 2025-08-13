@@ -51,7 +51,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-grid-slate-100 dark:bg-grid-slate-700/25 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:[mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.1),rgba(255,255,255,0.5))]" />
 
-      <Card className="relative w-full max-w-md bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+                  <Card className="relative w-full max-w-md bg-card/80 backdrop-blur-sm border-0 shadow-xl">
         <CardHeader className="text-center">
           <div className="inline-flex items-center gap-3 mb-4 justify-center">
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">

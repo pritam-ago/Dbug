@@ -15,7 +15,7 @@ export default function WelcomePage() {
       
       <div className="relative z-10">
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700">
+        <header className="bg-background/80 backdrop-blur-sm border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center gap-3">
@@ -81,7 +81,7 @@ export default function WelcomePage() {
 
             {/* Features Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200">
+              <Card className="bg-card/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200">
                 <CardContent className="p-6 text-center">
                   <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Code className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
@@ -95,7 +95,7 @@ export default function WelcomePage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200">
+              <Card className="bg-card/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200">
                 <CardContent className="p-6 text-center">
                   <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Users className="w-8 h-8 text-green-600 dark:text-green-400" />
@@ -109,7 +109,7 @@ export default function WelcomePage() {
                 </CardContent>
               </Card>
 
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200">
+              <Card className="bg-card/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200">
                 <CardContent className="p-6 text-center">
                   <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Zap className="w-8 h-8 text-purple-600 dark:text-purple-400" />

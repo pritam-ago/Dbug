@@ -99,7 +99,7 @@ export default function ProfilePage() {
       
       <div className="relative z-10">
         {/* Header */}
-        <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 dark:bg-gray-900/80 dark:border-gray-700">
+        <header className="bg-background/80 backdrop-blur-sm border-b border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center gap-4">
@@ -143,7 +143,7 @@ export default function ProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Profile Picture Section */}
             <div className="lg:col-span-1">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <Card className="bg-card/80 backdrop-blur-sm border-0 shadow-lg">
                 <CardHeader className="text-center">
                   <CardTitle className="text-gray-700 dark:text-gray-200">Profile Picture</CardTitle>
                 </CardHeader>
@@ -171,7 +171,7 @@ export default function ProfilePage() {
 
             {/* Profile Information Section */}
             <div className="lg:col-span-2">
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+              <Card className="bg-card/80 backdrop-blur-sm border-0 shadow-lg">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
@@ -265,7 +265,7 @@ export default function ProfilePage() {
                       value={formData.githubUsername}
                       onChange={handleInputChange}
                       disabled
-                      className="w-full bg-gray-50"
+                      className="w-full bg-muted"
                     />
                     <p className="text-xs text-gray-500">
                       GitHub username cannot be changed
@@ -275,7 +275,7 @@ export default function ProfilePage() {
               </Card>
 
               {/* Account Information */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg mt-6">
+              <Card className="bg-card/80 backdrop-blur-sm border-0 shadow-lg mt-6">
                 <CardHeader>
                   <CardTitle className="text-gray-700 dark:text-gray-200">Account Information</CardTitle>
                   <CardDescription className="text-gray-600 dark:text-gray-400">

@@ -33,7 +33,7 @@ export default function TestAuthPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+              <Card className="w-full max-w-md bg-card/80 backdrop-blur-sm border-0 shadow-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl text-gray-700">Authentication Test</CardTitle>
           <CardDescription className="text-gray-600">
