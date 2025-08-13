@@ -25,6 +25,7 @@ class CollaborationManager {
     const userId = socket.handshake.auth.userId;
     const projectId = socket.handshake.auth.projectId;
     const username = socket.handshake.auth.username;
+    const joinCode = socket.handshake.auth.joinCode;
 
     if (!userId || !projectId || !username) {
       socket.disconnect();

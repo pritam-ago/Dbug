@@ -4,6 +4,17 @@ import { connectToDatabase } from '../../db/connect';
 import { Project } from '../../db/models/Project';
 import { User } from '../../db/models/User';
 import { createSuccessResponse, createErrorResponse, createUnauthorizedResponse } from '../../utils/response';
+import crypto from 'node:crypto';
+
+function generateJoinCode(length: number = 8): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  const bytes = crypto.randomBytes(length);
+  for (let i = 0; i < length; i++) {
+    code += alphabet[bytes[i] % alphabet.length];
+  }
+  return code;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,8 +45,19 @@ export async function POST(request: NextRequest) {
       ...settings,
     };
     
+    // Generate a unique join code
+    let joinCode = generateJoinCode(8);
+    // Best-effort to avoid collisions before hitting unique index
+    // Try a few times; fallback to letting DB unique index enforce
+    for (let attempts = 0; attempts < 3; attempts++) {
+      const existing = await Project.findOne({ joinCode });
+      if (!existing) break;
+      joinCode = generateJoinCode(8);
+    }
+
     const projectData = {
       name,
+      joinCode,
       description: description || '',
       owner: user._id,
       collaborators: [],
@@ -54,8 +76,8 @@ export async function POST(request: NextRequest) {
     if (collaborators.length > 0) {
       for (const collaboratorEmail of collaborators) {
         const collaborator = await User.findOne({ email: collaboratorEmail });
-        if (collaborator && project.addCollaborator(collaborator._id.toString())) {
-          project.collaborators.push(collaborator._id);
+        if (collaborator) {
+          project.addCollaborator(collaborator._id.toString());
         }
       }
     }

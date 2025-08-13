@@ -29,6 +29,7 @@ export interface IUser extends Document {
 export interface Project {
   id: string;
   name: string;
+  joinCode: string;
   description: string;
   owner: string;
   collaborators: string[];
@@ -51,6 +52,7 @@ export interface Project {
 export interface IProject extends Document {
   _id: any;
   name: string;
+  joinCode: string;
   description: string;
   owner: any;
   collaborators: any[];
