@@ -26,7 +26,9 @@ import {
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
-const defaultCode = `# Python Sandbox Example - Test your code safely
+const sampleFileContents: Record<string, { content: string; language: string }> = {
+  "main.py": {
+    content: `# Python Sandbox Example - Test your code safely
 def calculate_average(numbers):
     if not numbers:
         return "Error: Cannot calculate average of empty list"
@@ -48,11 +50,7 @@ print(f"Squares: {squares}")
 
 print("\\nTesting f-strings:")
 name = "Sandbox"
-print(f"Hello from {name}!")`
-
-const sampleFileContents: Record<string, { content: string; language: string }> = {
-  "main.py": {
-    content: defaultCode,
+print(f"Hello from {name}!")`,
     language: "python",
   },
   "app.js": {
@@ -85,30 +83,6 @@ const greet = (name) => \`Hello, \${name}! Welcome to the sandbox!\`;
 console.log("\\n" + greet("Developer"));`,
     language: "javascript",
   },
-  "Header.tsx": {
-    content: `import React from 'react';
-
-interface HeaderProps {
-  title: string;
-  subtitle?: string;
-}
-
-export const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
-  return (
-    <header className="bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-6">
-          <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-          {subtitle && (
-            <p className="mt-2 text-sm text-gray-600">{subtitle}</p>
-          )}
-        </div>
-      </div>
-    </header>
-  );
-};`,
-    language: "typescript",
-  },
 }
 
 const mockFileTree: FileNode[] = [
@@ -117,12 +91,10 @@ const mockFileTree: FileNode[] = [
     type: "folder",
     isOpen: true,
     children: [
-      { name: "Header.tsx", type: "file" },
       { name: "main.py", type: "file" },
       { name: "app.js", type: "file" },
     ],
   },
-  { name: "README.md", type: "file" },
 ]
 
 interface CodeDebuggerProps {
@@ -131,14 +103,7 @@ interface CodeDebuggerProps {
 }
 
 export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
-  const [openFiles, setOpenFiles] = useState<OpenFile[]>([
-    {
-      name: "main.py",
-      content: defaultCode,
-      language: "python",
-      isDirty: false,
-    },
-  ])
+  const [openFiles, setOpenFiles] = useState<OpenFile[]>([])
   const [activeFileIndex, setActiveFileIndex] = useState(0)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [bugResults, setBugResults] = useState<BugResult[]>([])
@@ -210,7 +175,7 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
     }
   }
 
-  const getCurrentFile = () => openFiles[activeFileIndex]
+  const getCurrentFile = () => openFiles[activeFileIndex] || null
 
   const openFile = (fileName: string) => {
     const existingIndex = openFiles.findIndex((file) => file.name === fileName)
@@ -231,8 +196,9 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
       isDirty: false,
     }
 
-    setOpenFiles([...openFiles, newFile])
-    setActiveFileIndex(openFiles.length)
+    const newOpenFiles = [...openFiles, newFile]
+    setOpenFiles(newOpenFiles)
+    setActiveFileIndex(newOpenFiles.length - 1)
   }
 
   const closeFile = (index: number) => {
@@ -471,6 +437,113 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
     updateFileContent(newCode)
   }
 
+  const handleCreateFile = (path: string[], name: string) => {
+    const newFile: OpenFile = {
+      name,
+      content: `// ${name}\n// New file created`,
+      language: getLanguageFromFileName(name),
+      isDirty: false,
+    }
+    
+    const newOpenFiles = [...openFiles, newFile]
+    setOpenFiles(newOpenFiles)
+    setActiveFileIndex(newOpenFiles.length - 1)
+    
+    // Update file tree
+    const newFileNode: FileNode = { name, type: "file" }
+    updateFileTree(path, newFileNode)
+  }
+
+  const handleCreateFolder = (path: string[], name: string) => {
+    const newFolderNode: FileNode = { 
+      name, 
+      type: "folder", 
+      isOpen: true,
+      children: []
+    }
+    
+    updateFileTree(path, newFolderNode)
+  }
+
+  const handleRename = (path: string[], newName: string) => {
+    const oldName = path[path.length - 1]
+    
+    // Update open files if the renamed file is open
+    const updatedOpenFiles = openFiles.map(file => 
+      file.name === oldName ? { ...file, name: newName } : file
+    )
+    setOpenFiles(updatedOpenFiles)
+    
+    // Update file tree
+    updateFileTreeName(path, newName)
+  }
+
+  const handleDelete = (path: string[]) => {
+    const fileName = path[path.length - 1]
+    
+    // Remove from open files
+    const updatedOpenFiles = openFiles.filter(file => file.name !== fileName)
+    setOpenFiles(updatedOpenFiles)
+    
+    // Update active file index if needed
+    if (openFiles.length > 1 && activeFileIndex >= updatedOpenFiles.length) {
+      setActiveFileIndex(updatedOpenFiles.length - 1)
+    }
+    
+    // Update file tree
+    removeFromFileTree(path)
+  }
+
+  const updateFileTree = (path: string[], newNode: FileNode) => {
+    if (path.length === 0) {
+      setFileTree([...fileTree, newNode])
+      return
+    }
+    
+    const updateTree = (nodes: FileNode[], currentPath: string[]): FileNode[] => {
+      return nodes.map(node => {
+        if (currentPath.length === 1 && node.name === currentPath[0]) {
+          return { ...node, children: [...(node.children || []), newNode] }
+        } else if (currentPath.length > 1 && node.name === currentPath[0] && node.children) {
+          return { ...node, children: updateTree(node.children, currentPath.slice(1)) }
+        }
+        return node
+      })
+    }
+    
+    setFileTree(updateTree(fileTree, path))
+  }
+
+  const updateFileTreeName = (path: string[], newName: string) => {
+    const updateTree = (nodes: FileNode[], currentPath: string[]): FileNode[] => {
+      return nodes.map(node => {
+        if (currentPath.length === 1 && node.name === currentPath[0]) {
+          return { ...node, name: newName }
+        } else if (currentPath.length > 1 && node.name === currentPath[0] && node.children) {
+          return { ...node, children: updateTree(node.children, currentPath.slice(1)) }
+        }
+        return node
+      })
+    }
+    
+    setFileTree(updateTree(fileTree, path))
+  }
+
+  const removeFromFileTree = (path: string[]) => {
+    const updateTree = (nodes: FileNode[], currentPath: string[]): FileNode[] => {
+      return nodes.filter(node => {
+        if (currentPath.length === 1 && node.name === currentPath[0]) {
+          return false
+        } else if (currentPath.length > 1 && node.name === currentPath[0] && node.children) {
+          return { ...node, children: updateTree(node.children, currentPath.slice(1)) }
+        }
+        return true
+      })
+    }
+    
+    setFileTree(updateTree(fileTree, path))
+  }
+
   const handleFileSave = () => {
     const updatedFiles = [...openFiles]
     updatedFiles[activeFileIndex] = {
@@ -537,27 +610,61 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
 
   const currentFile = getCurrentFile()
 
-     // Keyboard shortcuts
-   useEffect(() => {
-     const handleKeyDown = (event: KeyboardEvent) => {
-       // Ctrl+Enter or Cmd+Enter to run code
-       if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-         event.preventDefault()
-         if (['python', 'javascript'].includes(currentFile?.language || '')) {
-           handleRunCode()
-         }
-       }
-       
-       // Ctrl+Shift+T or Cmd+Shift+T to toggle terminal
-       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'T') {
-         event.preventDefault()
-         setIsTerminalOpen(!isTerminalOpen)
-       }
-     }
+           // Keyboard shortcuts
+    useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        // Ctrl+Enter or Cmd+Enter to run code
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+          event.preventDefault()
+          if (['python', 'javascript'].includes(currentFile?.language || '')) {
+            handleRunCode()
+          }
+        }
+        
+        // Ctrl+Shift+T or Cmd+Shift+T to toggle terminal
+        if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'T') {
+          event.preventDefault()
+          setIsTerminalOpen(!isTerminalOpen)
+        }
 
-     document.addEventListener('keydown', handleKeyDown)
-     return () => document.removeEventListener('keydown', handleKeyDown)
-   }, [currentFile?.language, isTerminalOpen])
+                 // Ctrl+N or Cmd+N to create new file
+         if ((event.ctrlKey || event.metaKey) && event.key === 'N') {
+           event.preventDefault()
+           handleCreateFile([], `script-${Date.now()}.py`)
+         }
+
+        // F2 to rename selected file (if any)
+        if (event.key === 'F2') {
+          event.preventDefault()
+          const currentFile = getCurrentFile()
+          if (currentFile) {
+            // Find the file in the file tree
+            const findFileInTree = (nodes: FileNode[], fileName: string): string[] | null => {
+              for (const node of nodes) {
+                if (node.name === fileName) {
+                  return [node.name]
+                }
+                if (node.children) {
+                  const found = findFileInTree(node.children, fileName)
+                  if (found) {
+                    return [node.name, ...found]
+                  }
+                }
+              }
+              return null
+            }
+            
+            const filePath = findFileInTree(fileTree, currentFile.name)
+            if (filePath) {
+              handleRename(filePath, currentFile.name)
+            }
+          }
+        }
+      }
+
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [currentFile?.language, isTerminalOpen, fileTree])
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -571,32 +678,45 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
         </div>
       )}
       
-      <div className="border-b bg-card px-4 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="font-semibold text-lg">
-              {repoFullName ? `AI Code Debugger - ${repoFullName}` : 'AI Code Debugger'}
-            </h1>
-            <div className="flex items-center gap-2">
-              <GitBranch className="h-4 w-4 text-muted-foreground" />
-              <Badge variant="outline" className="text-xs">
-                {branch || 'main'}
-              </Badge>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Integrations:</span>
-            <Badge variant="secondary" className="text-xs flex items-center gap-1">
-              <Zap className="h-3 w-3" />
-              OpenAI
-            </Badge>
-            <Badge variant="outline" className="text-xs flex items-center gap-1">
-              <Terminal className="h-3 w-3" />
-              Sandbox
-            </Badge>
-          </div>
-        </div>
-      </div>
+             <div className="border-b bg-card px-4 py-3">
+         <div className="flex items-center gap-4">
+           <Button
+             variant="ghost"
+             size="sm"
+             onClick={() => window.history.back()}
+             className="h-8 w-8 p-0"
+             title="Go Back"
+           >
+             <svg
+               className="h-4 w-4"
+               fill="none"
+               stroke="currentColor"
+               viewBox="0 0 24 24"
+               xmlns="http://www.w3.org/2000/svg"
+             >
+               <path
+                 strokeLinecap="round"
+                 strokeLinejoin="round"
+                 strokeWidth={2}
+                 d="M15 19l-7-7 7-7"
+               />
+             </svg>
+           </Button>
+           <div className="flex items-center gap-2">
+             <h1 className="font-semibold text-lg">AI Code Debugger</h1>
+             {repoFullName && (
+               <>
+                 <span className="text-muted-foreground">•</span>
+                 <span className="text-sm text-muted-foreground">{repoFullName}</span>
+                 <GitBranch className="h-4 w-4 text-muted-foreground" />
+                 <Badge variant="outline" className="text-xs">
+                   {branch || 'main'}
+                 </Badge>
+               </>
+             )}
+           </div>
+         </div>
+       </div>
 
       <div className="flex flex-1 overflow-hidden">
         <FileExplorer
@@ -607,6 +727,10 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
           onOpenFile={openFile}
           isOpen={isFileExplorerOpen}
           onToggle={() => setIsFileExplorerOpen(!isFileExplorerOpen)}
+          onCreateFile={handleCreateFile}
+          onCreateFolder={handleCreateFolder}
+          onRename={handleRename}
+          onDelete={handleDelete}
         />
 
         <div className="flex-1 flex flex-col min-w-0">
@@ -646,14 +770,14 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
                     )}
                   </div>
               ))}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 flex-shrink-0"
-                onClick={() => openFile("untitled.txt")}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+                             <Button
+                 variant="ghost"
+                 size="sm"
+                 className="h-8 w-8 p-0 flex-shrink-0"
+                 onClick={() => handleCreateFile([], `script-${Date.now()}.py`)}
+               >
+                 <Plus className="h-4 w-4" />
+               </Button>
             </div>
 
             <div className="px-4 py-2">
@@ -664,27 +788,21 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
                      Save
                    </Button>
                    <Separator orientation="vertical" className="h-6" />
-                   <select
-                     value={currentFile?.language || "plaintext"}
-                     onChange={(e) => {
-                       const updatedFiles = [...openFiles]
-                       updatedFiles[activeFileIndex] = {
-                         ...updatedFiles[activeFileIndex],
-                         language: e.target.value,
-                       }
-                       setOpenFiles(updatedFiles)
-                     }}
-                     className="px-3 py-1 rounded border bg-background text-foreground text-sm"
-                   >
-                     <option value="python">Python</option>
-                     <option value="javascript">JavaScript</option>
-                     <option value="typescript">TypeScript</option>
-                     <option value="markdown">Markdown</option>
-                     <option value="json">JSON</option>
-                     <option value="css">CSS</option>
-                     <option value="html">HTML</option>
-                     <option value="plaintext">Plain Text</option>
-                   </select>
+                                       <select
+                      value={currentFile?.language || "python"}
+                      onChange={(e) => {
+                        const updatedFiles = [...openFiles]
+                        updatedFiles[activeFileIndex] = {
+                          ...updatedFiles[activeFileIndex],
+                          language: e.target.value,
+                        }
+                        setOpenFiles(updatedFiles)
+                      }}
+                      className="px-3 py-1 rounded border bg-background text-foreground text-sm"
+                    >
+                      <option value="python">Python</option>
+                      <option value="javascript">JavaScript</option>
+                    </select>
                    {['python', 'javascript'].includes(currentFile?.language || '') && (
                      <>
                        <Separator orientation="vertical" className="h-6" />
@@ -737,51 +855,92 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
             </div>
           </div>
 
-                     <div className={`flex-1 flex flex-col ${isTerminalOpen ? "min-h-0" : ""}`}>
-            <Editor
-              height="100%"
-              language={currentFile?.language || "plaintext"}
-              value={currentFile?.content || ""}
-              onChange={(value) => updateFileContent(value || "")}
-              onMount={handleEditorDidMount}
-              theme={theme === "dark" ? "vs-dark" : "vs-light"}
-              options={{
-                fontSize: 14,
-                fontFamily: "var(--font-mono)",
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                tabSize: 2,
-                insertSpaces: true,
-                wordWrap: "on",
-                lineNumbers: "on",
-                renderLineHighlight: "line",
-                selectOnLineNumbers: true,
-                roundedSelection: false,
-                readOnly: false,
-                cursorStyle: "line",
-              }}
-            />
+                                           <div className={`flex-1 flex flex-col ${isTerminalOpen ? "min-h-0" : ""}`}>
+                        {currentFile ? (
+                          <Editor
+                            height="100%"
+                            language={currentFile.language}
+                            value={currentFile.content}
+                            onChange={(value) => updateFileContent(value || "")}
+                            onMount={handleEditorDidMount}
+                            theme={theme === "dark" ? "vs-dark" : "vs-light"}
+                            options={{
+                              fontSize: 14,
+                              fontFamily: "var(--font-mono)",
+                              minimap: { enabled: false },
+                              scrollBeyondLastLine: false,
+                              automaticLayout: true,
+                              tabSize: 2,
+                              insertSpaces: true,
+                              wordWrap: "on",
+                              lineNumbers: "on",
+                              renderLineHighlight: "line",
+                              selectOnLineNumbers: true,
+                              roundedSelection: false,
+                              readOnly: false,
+                              cursorStyle: "line",
+                            }}
+                          />
+                        ) : (
+                          <div className="flex-1 flex items-center justify-center bg-muted/20">
+                            <div className="text-center text-muted-foreground">
+                              <File className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                              <h3 className="text-lg font-medium mb-2">No files open</h3>
+                              <p className="text-sm mb-4">Create a new file or open an existing one to start coding</p>
+                              <div className="flex gap-2 justify-center">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleCreateFile([], "main.py")}
+                                >
+                                  <File className="h-4 w-4 mr-2" />
+                                  New Python File
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleCreateFile([], "app.js")}
+                                >
+                                  <File className="h-4 w-4 mr-2" />
+                                  New JavaScript File
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
             
-            {/* Sandbox Status Bar */}
-            {['python', 'javascript'].includes(currentFile?.language || '') && (
-              <div className="border-t bg-muted/50 px-4 py-2 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Zap className="h-3 w-3 text-green-500" />
-                  <span>Sandbox Mode Active</span>
-                  <span className="text-xs">• {currentFile?.language === 'python' ? 'Python 3.x' : 'JavaScript ES6+'}</span>
+                         {/* Status Bar */}
+                           {currentFile && (
+                <div className="border-t bg-muted/50 px-4 py-2 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    {['python', 'javascript'].includes(currentFile.language) && (
+                      <>
+                        <Zap className="h-3 w-3 text-green-500" />
+                        <span>Sandbox Ready</span>
+                        <span>•</span>
+                      </>
+                    )}
+                    <span>File: {currentFile.name}</span>
+                    <span>•</span>
+                    <span>Language: {currentFile.language}</span>
+                    {currentFile.isDirty && (
+                      <>
+                        <span>•</span>
+                        <span className="text-orange-500">Modified</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <span>Ctrl+Enter: Run</span>
+                    <span>•</span>
+                    <span>Ctrl+N: New File</span>
+                    <span>•</span>
+                    <span>F2: Rename</span>
+                    <span>•</span>
+                    <span>Ctrl+Shift+T: Terminal</span>
+                  </div>
                 </div>
-                                 <div className="flex items-center gap-2 text-muted-foreground">
-                   <span>Timeout: 30s</span>
-                   <span>•</span>
-                   <span>Isolated Execution</span>
-                   <span>•</span>
-                   <span>Ctrl+Enter to run</span>
-                   <span>•</span>
-                   <span>Ctrl+Shift+T to toggle terminal</span>
-                 </div>
-              </div>
-            )}
+              )}
           </div>
 
           <TerminalComponent

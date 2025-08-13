@@ -25,40 +25,11 @@ export function getLanguageFromFileName(fileName: string): string {
   const extension = fileName.split('.').pop()?.toLowerCase()
   
   const languageMap: { [key: string]: string } = {
-    'js': 'JavaScript',
-    'ts': 'TypeScript',
-    'jsx': 'React JSX',
-    'tsx': 'React TSX',
-    'py': 'Python',
-    'java': 'Java',
-    'cpp': 'C++',
-    'c': 'C',
-    'cs': 'C#',
-    'php': 'PHP',
-    'rb': 'Ruby',
-    'go': 'Go',
-    'rs': 'Rust',
-    'swift': 'Swift',
-    'kt': 'Kotlin',
-    'scala': 'Scala',
-    'html': 'HTML',
-    'css': 'CSS',
-    'scss': 'SCSS',
-    'sass': 'Sass',
-    'json': 'JSON',
-    'xml': 'XML',
-    'md': 'Markdown',
-    'sql': 'SQL',
-    'sh': 'Shell',
-    'ps1': 'PowerShell',
-    'bat': 'Batch',
-    'yml': 'YAML',
-    'yaml': 'YAML',
-    'toml': 'TOML',
-    'ini': 'INI'
+    'js': 'javascript',
+    'py': 'python'
   }
   
-  return languageMap[extension || ''] || 'Text'
+  return languageMap[extension || ''] || 'python'
 }
 
 // User management utilities
