@@ -31,6 +31,7 @@ import usersRouter from '../api/users/index.js'
 import usersGitHubRouter from '../api/users/github.js'
 import githubRouter from '../api/github/index.js'
 import sandboxRouter from '../api/sandbox/route.js'
+import aiRouter from '../api/ai/debug.js'
 
 app.use('/api/users', usersRouter)
 app.use('/api/users/github', usersGitHubRouter)
@@ -44,6 +45,11 @@ console.log('GitHub API routes loaded successfully')
 console.log('Loading Sandbox API routes...')
 app.use('/api/sandbox', sandboxRouter)
 console.log('Sandbox API routes loaded successfully')
+
+// AI API Routes
+console.log('Loading AI API routes...')
+app.use('/api/ai', aiRouter)
+console.log('AI API routes loaded successfully')
 
 // NextAuth is now handled by the client-side Next.js app
 

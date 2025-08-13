@@ -354,33 +354,94 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
     setIsAnalyzing(true)
     setIsChatOpen(false)
 
-    setTimeout(() => {
-      const mockResults: BugResult[] = [
-        {
-          type: "error",
-          line: 8,
-          message: "Division by zero error: Empty list passed to calculate_average function",
-          fix: "Add a check for empty list before division",
+    try {
+      const currentFile = getCurrentFile()
+      if (!currentFile) {
+        setIsAnalyzing(false)
+        return
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
+      const response = await fetch(`${apiUrl}/api/ai/debug`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          type: "warning",
-          line: 3,
-          message: "Consider using built-in sum() function for better performance",
-          fix: "Replace manual loop with sum(numbers)",
-        },
-      ]
+        body: JSON.stringify({
+          code: currentFile.content,
+          language: currentFile.language,
+          context: `Analyzing ${currentFile.name} file`,
+          preferences: {
+            style: 'concise',
+            focus: 'all'
+          }
+        }),
+      })
 
-      setBugResults(mockResults)
-      setAiExplanation(`I found ${mockResults.length} issues in your code:
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
 
-1. **Division by Zero Error (Line 8)**: The calculate_average function doesn't handle empty lists, which causes a division by zero error.
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        const aiResponse = data.data
+        
+        // Convert AI response to BugResult format
+        const bugResults: BugResult[] = []
+        
+        // Add issues as errors
+        if (aiResponse.analysis.issues && aiResponse.analysis.issues.length > 0) {
+          aiResponse.analysis.issues.forEach((issue: string, index: number) => {
+            bugResults.push({
+              type: "error",
+              line: index + 1, // Default line number
+              message: issue,
+              fix: aiResponse.analysis.suggestions[index] || "Review and fix the issue",
+              aiFixedCode: aiResponse.fixedCode,
+              codeSnippet: aiResponse.codeSnippet,
+            })
+          })
+        }
+        
+        // Add suggestions as warnings if no issues found
+        if (bugResults.length === 0 && aiResponse.analysis.suggestions && aiResponse.analysis.suggestions.length > 0) {
+          aiResponse.analysis.suggestions.forEach((suggestion: string, index: number) => {
+            bugResults.push({
+              type: "warning",
+              line: index + 1,
+              message: suggestion,
+              fix: "Consider implementing this suggestion",
+              aiFixedCode: aiResponse.fixedCode,
+              codeSnippet: aiResponse.codeSnippet,
+            })
+          })
+        }
 
-2. **Performance Optimization (Line 3)**: Using Python's built-in sum() function would be more efficient than a manual loop.
-
-These are common edge cases that should be handled with proper input validation.`)
-
+        setBugResults(bugResults)
+        setAiExplanation(aiResponse.explanation || 'Code analyzed using Gemini AI')
+        
+        // If there's fixed code, offer to apply it
+        if (aiResponse.fixedCode && aiResponse.fixedCode !== currentFile.content) {
+          // Store the fixed code for the apply fix button
+          console.log('AI suggested fixed code:', aiResponse.fixedCode)
+          console.log('Code snippet:', aiResponse.codeSnippet)
+        }
+      } else {
+        throw new Error(data.message || 'Failed to analyze code')
+      }
+    } catch (error) {
+      console.error('AI analysis failed:', error)
+      setBugResults([{
+        type: "error",
+        line: 1,
+        message: `AI analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        fix: "Please check your API configuration and try again",
+      }])
+      setAiExplanation("Sorry, I couldn't analyze your code. Please check the console for more details.")
+    } finally {
       setIsAnalyzing(false)
-    }, 2000)
+    }
   }
 
   const handleApplyFix = (result: BugResult) => {
@@ -389,6 +450,14 @@ These are common edge cases that should be handled with proper input validation.
     const currentFile = getCurrentFile()
     if (!currentFile) return
 
+    // Check if we have AI-suggested fixed code
+    if (result.aiFixedCode) {
+      // Apply the full AI-suggested code
+      updateFileContent(result.aiFixedCode)
+      return
+    }
+
+    // Fallback to manual fix logic
     let newCode = currentFile.content
     if (result.line === 8) {
       newCode = newCode.replace(

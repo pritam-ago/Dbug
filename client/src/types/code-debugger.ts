@@ -3,6 +3,8 @@ export interface BugResult {
   line: number
   message: string
   fix?: string
+  aiFixedCode?: string
+  codeSnippet?: string
 }
 
 export interface FileNode {
