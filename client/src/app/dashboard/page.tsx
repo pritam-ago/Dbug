@@ -107,13 +107,13 @@ export default function DashboardPage() {
                 <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center mb-4">
                   <Code className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <CardTitle className="text-gray-700 dark:text-gray-200">Start Debugging</CardTitle>
+                <CardTitle className="text-gray-700 dark:text-gray-200">Start Debugging (Solo)</CardTitle>
                 <CardDescription className="text-gray-600 dark:text-gray-400">
-                  Create a new debugging session
+                  Create a new solo debugging session
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Link href="/debugger">
+                <Link href="/debugger/solo">
                   <Button className="w-full bg-indigo-600 hover:bg-indigo-700">
                     Get Started
                     <ArrowRight className="w-4 h-4 ml-2" />

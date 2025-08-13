@@ -1,5 +1,5 @@
-const express = require('express')
-const User = require('../../db/models/User').default
+import express from 'express'
+import User from '../../db/models/User'
 const router = express.Router()
 
 // Create or update user
@@ -189,4 +189,4 @@ router.get('/', async (req, res) => {
   }
 })
 
-module.exports = router
+export default router

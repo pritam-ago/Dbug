@@ -1,7 +1,7 @@
 // Environment variable configuration
 export const env = {
   NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development-only',
-  NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:3000',
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'http://localhost:5000',
   GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID || '',
   GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET || '',
   NODE_ENV: process.env.NODE_ENV || 'development',

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Editor } from "@monaco-editor/react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -95,7 +95,12 @@ const mockFileTree: FileNode[] = [
   { name: "README.md", type: "file" },
 ]
 
-export function CodeDebugger() {
+interface CodeDebuggerProps {
+  repoFullName?: string
+  branch?: string
+}
+
+export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
   const [openFiles, setOpenFiles] = useState<OpenFile[]>([
     {
       name: "main.py",
@@ -141,6 +146,37 @@ export function CodeDebugger() {
     },
   ])
   const [onlineUsers] = useState(["Alice", "Bob", "Charlie", "You"])
+  const [isImporting, setIsImporting] = useState(false)
+
+  // Import repository when component mounts with repo info
+  useEffect(() => {
+    if (repoFullName && branch) {
+      importRepository(repoFullName, branch)
+    }
+  }, [repoFullName, branch])
+
+  const importRepository = async (repoName: string, repoBranch: string) => {
+    setIsImporting(true)
+    try {
+      // Fetch repository files from GitHub
+      const response = await fetch(`/api/github/files?repo=${repoName}&branch=${repoBranch}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          // Update file tree and open files
+          setFileTree(data.data.fileTree || [])
+          if (data.data.files && data.data.files.length > 0) {
+            setOpenFiles(data.data.files)
+            setActiveFileIndex(0)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error importing repository:', error)
+    } finally {
+      setIsImporting(false)
+    }
+  }
 
   const getCurrentFile = () => openFiles[activeFileIndex]
 
@@ -368,14 +404,26 @@ These are common edge cases that should be handled with proper input validation.
 
   return (
     <div className="flex flex-col h-screen bg-background">
+      {/* Import Loading Indicator */}
+      {isImporting && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-4 py-3">
+          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-sm font-medium">Importing repository...</span>
+          </div>
+        </div>
+      )}
+      
       <div className="border-b bg-card px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="font-semibold text-lg">AI Code Debugger</h1>
+            <h1 className="font-semibold text-lg">
+              {repoFullName ? `AI Code Debugger - ${repoFullName}` : 'AI Code Debugger'}
+            </h1>
             <div className="flex items-center gap-2">
               <GitBranch className="h-4 w-4 text-muted-foreground" />
               <Badge variant="outline" className="text-xs">
-                main
+                {branch || 'main'}
               </Badge>
             </div>
           </div>

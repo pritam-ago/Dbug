@@ -1,5 +1,5 @@
 import express from 'express'
-import { connectDB } from '../../db/connect'
+import { connectToDatabase } from '../../db/connect'
 import User from '../../db/models/User'
 
 const router = express.Router()
@@ -7,7 +7,7 @@ const router = express.Router()
 // Get user by GitHub ID
 router.get('/:id', async (req, res) => {
   try {
-    await connectDB()
+    await connectToDatabase()
     
     const githubId = req.params.id
     
@@ -41,4 +41,4 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-module.exports = router
+export default router

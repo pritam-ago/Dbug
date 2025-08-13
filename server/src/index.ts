@@ -21,9 +21,29 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'DBug Server is running' })
 })
 
+app.get('/test-github', (req, res) => {
+  res.json({ status: 'OK', message: 'GitHub routes are accessible' })
+})
+
 // API Routes
-app.use('/api/users', require('../api/users'))
-app.use('/api/users/github', require('../api/users/github'))
+console.log('Loading API routes...')
+import usersRouter from '../api/users/index.js'
+import usersGitHubRouter from '../api/users/github.js'
+import githubRouter from '../api/github/index.js'
+import sandboxRouter from '../api/sandbox/route.js'
+
+app.use('/api/users', usersRouter)
+app.use('/api/users/github', usersGitHubRouter)
+
+// GitHub API Routes
+console.log('Loading GitHub API routes...')
+app.use('/api/github', githubRouter)
+console.log('GitHub API routes loaded successfully')
+
+// Sandbox API Routes
+console.log('Loading Sandbox API routes...')
+app.use('/api/sandbox', sandboxRouter)
+console.log('Sandbox API routes loaded successfully')
 
 // NextAuth is now handled by the client-side Next.js app
 

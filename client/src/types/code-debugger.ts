@@ -26,3 +26,20 @@ export interface ChatMessage {
   timestamp: Date
   type: "user" | "system" | "ai"
 }
+
+export interface GitHubRepo {
+  id: number
+  name: string
+  full_name: string
+  description: string
+  private: boolean
+  html_url: string
+  clone_url: string
+  default_branch: string
+  updated_at: string
+  permissions: {
+    admin: boolean
+    push: boolean
+    pull: boolean
+  }
+}

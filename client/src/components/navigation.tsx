@@ -34,6 +34,9 @@ export function Navigation() {
             <Link href="/debug" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
               Debug
             </Link>
+            <Link href="/sandbox" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
+              Sandbox
+            </Link>
             <Link href="/rooms" className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100">
               Rooms
             </Link>
