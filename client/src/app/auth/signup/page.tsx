@@ -3,17 +3,18 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { signIn } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Code, Github, User } from 'lucide-react'
+import { Code, Github, User, Mail, UserCheck } from 'lucide-react'
 import { createUser } from '@/lib/db'
 
 export default function SignupPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { data: session, status } = useSession()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -21,23 +22,31 @@ export default function SignupPage() {
     githubUsername: '',
     githubId: '',
   })
+  const [step, setStep] = useState<'initial' | 'form' | 'complete'>('initial')
 
   useEffect(() => {
-    // Pre-fill form with GitHub data if available
+    // If user is already authenticated, redirect to dashboard
+    if (status === 'authenticated' && session) {
+      router.push('/dashboard')
+      return
+    }
+
+    // Check if we have GitHub data from OAuth
     const githubId = searchParams.get('githubId')
     const githubUsername = searchParams.get('githubUsername')
     const email = searchParams.get('email')
     const name = searchParams.get('name')
 
-    if (githubId && githubUsername && email && name) {
+    if (githubId && githubUsername) {
       setFormData({
-        name: decodeURIComponent(name),
-        email: decodeURIComponent(email),
+        name: name ? decodeURIComponent(name) : '',
+        email: email ? decodeURIComponent(email) : '',
         githubUsername: decodeURIComponent(githubUsername),
         githubId: decodeURIComponent(githubId),
       })
+      setStep('form')
     }
-  }, [searchParams])
+  }, [searchParams, session, status, router])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -52,8 +61,14 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
+      // Validate required fields
+      if (!formData.name || !formData.email || !formData.githubId || !formData.githubUsername) {
+        alert('Please fill in all required fields')
+        return
+      }
+
       // Create user in database
-      await createUser({
+      const result = await createUser({
         githubId: formData.githubId,
         githubUsername: formData.githubUsername,
         email: formData.email,
@@ -61,14 +76,19 @@ export default function SignupPage() {
         avatarUrl: `https://github.com/${formData.githubUsername}.png`,
       })
 
-      // Sign in with NextAuth
-      await signIn('github', { 
-        callbackUrl: '/dashboard',
-        redirect: false 
-      })
-
-      // Redirect to dashboard
-      router.push('/dashboard')
+      if (result.success) {
+        setStep('complete')
+        // Sign in with NextAuth
+        await signIn('github', { 
+          callbackUrl: '/dashboard',
+          redirect: false 
+        })
+        
+        // Redirect to dashboard after a short delay
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 2000)
+      }
     } catch (error) {
       console.error('Signup error:', error)
       alert('Signup failed. Please try again.')
@@ -80,11 +100,46 @@ export default function SignupPage() {
   const handleGitHubSignup = async () => {
     setIsLoading(true)
     try {
-      await signIn('github', { callbackUrl: '/auth/signup' })
+      // Sign in with GitHub and redirect back to signup page
+      await signIn('github', { 
+        callbackUrl: `${window.location.origin}/auth/signup`,
+        redirect: false 
+      })
     } catch (error) {
       console.error('GitHub signup error:', error)
       setIsLoading(false)
     }
+  }
+
+  // Show loading while checking session
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show completion message
+  if (step === 'complete') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Card className="relative w-full max-w-md bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UserCheck className="w-8 h-8 text-green-600" />
+            </div>
+            <CardTitle className="text-2xl text-gray-700">Account Created!</CardTitle>
+            <CardDescription className="text-gray-600">
+              Redirecting to dashboard...
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -100,36 +155,40 @@ export default function SignupPage() {
             <h1 className="text-2xl font-bold text-gray-700 font-['Space_Grotesk']">DBug</h1>
           </div>
 
-          <CardTitle className="text-2xl text-gray-700 font-['Space_Grotesk']">Create Account</CardTitle>
+          <CardTitle className="text-2xl text-gray-700 font-['Space_Grotesk']">
+            {step === 'form' ? 'Complete Your Profile' : 'Create Account'}
+          </CardTitle>
           <CardDescription className="text-gray-600 font-['DM_Sans']">
-            Join the debugging revolution
+            {step === 'form' ? 'Add your details to complete registration' : 'Join the debugging revolution'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {formData.githubId ? (
-            // Pre-filled form with GitHub data
+          {step === 'form' ? (
+            // Profile completion form
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Full Name *</Label>
                 <Input
                   id="name"
                   name="name"
                   type="text"
                   value={formData.name}
                   onChange={handleInputChange}
+                  placeholder="Enter your full name"
                   required
                   className="w-full"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email Address *</Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
                   value={formData.email}
                   onChange={handleInputChange}
+                  placeholder="Enter your email"
                   required
                   className="w-full"
                 />
@@ -143,14 +202,15 @@ export default function SignupPage() {
                   type="text"
                   value={formData.githubUsername}
                   onChange={handleInputChange}
-                  required
-                  className="w-full"
+                  disabled
+                  className="w-full bg-gray-50"
                 />
+                <p className="text-xs text-gray-500">Connected from GitHub</p>
               </div>
 
               <Button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !formData.name || !formData.email}
                 className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 font-['DM_Sans']"
               >
                 {isLoading ? (
@@ -161,7 +221,7 @@ export default function SignupPage() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <User className="w-5 h-5" />
-                    Complete Signup
+                    Complete Registration
                   </div>
                 )}
               </Button>

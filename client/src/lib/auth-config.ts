@@ -23,22 +23,9 @@ export const authConfig = {
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === 'github') {
-        try {
-          // Check if user exists in database
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/users/github/${profile?.id}`)
-          
-          if (response.ok) {
-            // User exists, allow sign in
-            return true
-          } else {
-            // User doesn't exist, redirect to signup
-            return '/auth/signup?githubId=' + profile?.id + '&githubUsername=' + profile?.login + '&email=' + user.email + '&name=' + user.name
-          }
-        } catch (error) {
-          console.error('Database check failed:', error)
-          // Fallback: allow sign in
-          return true
-        }
+        // For now, allow all GitHub sign-ins
+        // We'll handle user creation/validation in the signup page
+        return true
       }
       return false
     },
