@@ -1,73 +1,57 @@
-import mongoose, { Schema } from 'mongoose';
-import { IUser } from '../../types';
+import mongoose from 'mongoose'
 
-const userSchema = new Schema<IUser>({
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true,
-    trim: true,
-  },
-  name: {
-    type: String,
-    required: true,
-    trim: true,
-  },
+const userSchema = new mongoose.Schema({
   githubId: {
     type: String,
     required: true,
     unique: true,
-    sparse: true,
+    index: true
   },
   githubUsername: {
     type: String,
     required: true,
-    trim: true,
+    unique: true,
+    index: true
   },
-  githubAccessToken: {
+  email: {
     type: String,
-    select: false,
+    required: true,
+    unique: true,
+    index: true
   },
-  avatar: {
+  name: {
     type: String,
+    required: true
   },
   avatarUrl: {
     type: String,
+    required: true
   },
+  provider: {
+    type: String,
+    default: 'github'
+  },
+  lastSignIn: {
+    type: Date,
+    default: Date.now
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
 }, {
-  timestamps: true,
-});
+  timestamps: true
+})
 
-userSchema.index({ githubUsername: 1 });
+// Ensure unique indexes
+userSchema.index({ githubId: 1 }, { unique: true })
+userSchema.index({ githubUsername: 1 }, { unique: true })
+userSchema.index({ email: 1 }, { unique: true })
 
-userSchema.virtual('id').get(function(this: IUser) {
-  return this._id.toHexString();
-});
+const User = mongoose.models.User || mongoose.model('User', userSchema)
 
-userSchema.set('toJSON', {
-  virtuals: true,
-  transform: function(doc, ret: Record<string, any>) {
-    delete ret._id;
-    delete ret.__v;
-    delete ret.githubAccessToken;
-    return ret;
-  },
-});
-
-userSchema.methods.getPublicProfile = function(this: IUser): Partial<IUser> {
-  return {
-    id: this._id,
-    name: this.name,
-    githubUsername: this.githubUsername,
-    avatar: this.avatar,
-    avatarUrl: this.avatarUrl,
-    createdAt: this.createdAt,
-  };
-};
-
-userSchema.methods.hasGitHubAccess = function(this: IUser): boolean {
-  return !!(this.githubId && this.githubAccessToken);
-};
-
-export const User = mongoose.model<IUser>('User', userSchema);
+export default User
