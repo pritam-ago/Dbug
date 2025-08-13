@@ -1,54 +1,153 @@
 "use client"
 
 import { useSession, signOut } from "next-auth/react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { ProtectedRoute } from "@/components/auth/protected-route"
-import { Code, Users, Plus, ArrowLeft, LogOut, Clock, GitBranch, Settings } from "lucide-react"
+import { Code, Users, Plus, ArrowLeft, LogOut, Clock, GitBranch, Settings, X, Check } from "lucide-react"
+
+interface Room {
+  _id: string
+  name: string
+  description: string
+  joinCode: string
+  owner: string
+  collaborators: string[]
+  createdAt: string
+  updatedAt: string
+}
 
 export default function RoomsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showJoinModal, setShowJoinModal] = useState(false)
+  const [joinCode, setJoinCode] = useState("")
+  const [newRoom, setNewRoom] = useState({
+    name: "",
+    description: "",
+    language: "JavaScript"
+  })
+  const [loading, setLoading] = useState(false)
+  const [apiUrl] = useState(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000')
+
+  useEffect(() => {
+    if (session?.user) {
+      loadRooms()
+    }
+  }, [session])
+
+  const loadRooms = async () => {
+    try {
+      // For now, we'll use mock data since we need to implement user ID handling
+      // In a real app, you'd fetch from the API using the user's ID
+      const mockRooms: Room[] = [
+        {
+          _id: "1",
+          name: "Frontend Bug Fix",
+          description: "Working on React component issues",
+          joinCode: "ABC123",
+          owner: "John Doe",
+          collaborators: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          _id: "2",
+          name: "API Integration",
+          description: "Debugging REST API endpoints",
+          joinCode: "DEF456",
+          owner: "Jane Smith",
+          collaborators: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ]
+      setRooms(mockRooms)
+    } catch (error) {
+      console.error("Failed to load rooms:", error)
+    }
+  }
+
+  const handleCreateRoom = async () => {
+    if (!newRoom.name.trim() || !session?.user) return
+    
+    setLoading(true)
+    try {
+      // For now, create a mock room
+      // In a real app, you'd call the API
+      const room: Room = {
+        _id: Date.now().toString(),
+        name: newRoom.name,
+        description: newRoom.description,
+        joinCode: generateJoinCode(),
+        owner: session.user.name || "You",
+        collaborators: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+      
+      setRooms(prev => [room, ...prev])
+      setShowCreateModal(false)
+      setNewRoom({ name: "", description: "", language: "JavaScript" })
+      
+      // Navigate to the new room
+      router.push(`/rooms/${room._id}`)
+    } catch (error) {
+      console.error("Failed to create room:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleJoinRoom = async () => {
+    if (!joinCode.trim() || !session?.user) return
+    
+    setLoading(true)
+    try {
+      // For now, navigate to a mock room
+      // In a real app, you'd call the API to join
+      const roomId = "joined-" + Date.now()
+      router.push(`/rooms/${roomId}`)
+    } catch (error) {
+      console.error("Failed to join room:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const generateJoinCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let result = ''
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return result
+  }
 
   const handleSignOut = () => {
     signOut({ callbackUrl: '/' })
   }
 
-  const mockRooms = [
-    {
-      id: "1",
-      name: "Frontend Bug Fix",
-      description: "Working on React component issues",
-      participants: 3,
-      lastActive: "2 hours ago",
-      status: "active",
-      language: "JavaScript",
-      owner: "John Doe",
-    },
-    {
-      id: "2",
-      name: "API Integration",
-      description: "Debugging REST API endpoints",
-      participants: 2,
-      lastActive: "1 day ago",
-      status: "idle",
-      language: "TypeScript",
-      owner: "Jane Smith",
-    },
-    {
-      id: "3",
-      name: "Database Optimization",
-      description: "Query performance improvements",
-      participants: 4,
-      lastActive: "3 hours ago",
-      status: "active",
-      language: "SQL",
-      owner: "Mike Johnson",
-    },
-  ]
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+    
+    if (diffInHours < 1) return "Just now"
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`
+    const diffInDays = Math.floor(diffInHours / 24)
+    return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`
+  }
 
   return (
     <ProtectedRoute>
@@ -109,16 +208,29 @@ export default function RoomsPage() {
                   Join existing rooms or create new ones to collaborate with your team.
                 </p>
               </div>
-              <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
-                <Plus className="w-4 h-4" />
-                Create Room
-              </Button>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowJoinModal(true)}
+                  className="gap-2"
+                >
+                  <Users className="w-4 h-4" />
+                  Join Room
+                </Button>
+                <Button 
+                  onClick={() => setShowCreateModal(true)}
+                  className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Room
+                </Button>
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockRooms.map((room) => (
-              <Card key={room.id} className="bg-card/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer">
+            {rooms.map((room) => (
+              <Card key={room._id} className="bg-card/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -128,14 +240,11 @@ export default function RoomsPage() {
                       </CardDescription>
                       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <GitBranch className="w-3 h-3" />
-                        <span>{room.language}</span>
+                        <span>JavaScript</span>
                       </div>
                     </div>
-                    <Badge
-                      variant={room.status === "active" ? "default" : "secondary"}
-                      className="ml-2"
-                    >
-                      {room.status}
+                    <Badge variant="default" className="ml-2">
+                      active
                     </Badge>
                   </div>
                 </CardHeader>
@@ -143,18 +252,24 @@ export default function RoomsPage() {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-600 dark:text-gray-400">{room.participants} participants</span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {room.collaborators.length + 1} participant{room.collaborators.length !== 0 ? 's' : ''}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-600 dark:text-gray-400">{room.lastActive}</span>
+                      <span className="text-gray-600 dark:text-gray-400">{formatDate(room.updatedAt)}</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       Owner: {room.owner}
                     </span>
-                    <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+                    <Button 
+                      size="sm" 
+                      className="bg-indigo-600 hover:bg-indigo-700"
+                      onClick={() => router.push(`/rooms/${room._id}`)}
+                    >
                       Join Room
                     </Button>
                   </div>
@@ -163,7 +278,7 @@ export default function RoomsPage() {
             ))}
           </div>
 
-          {mockRooms.length === 0 && (
+          {rooms.length === 0 && (
             <div className="text-center py-16">
               <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-gray-400" />
@@ -172,13 +287,139 @@ export default function RoomsPage() {
               <p className="text-gray-500 dark:text-gray-400 mb-6 font-['DM_Sans']">
                 Create your first collaboration room to start debugging with your team.
               </p>
-              <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
+              <Button 
+                onClick={() => setShowCreateModal(true)}
+                className="gap-2 bg-indigo-600 hover:bg-indigo-700"
+              >
                 <Plus className="w-4 h-4" />
                 Create Room
               </Button>
             </div>
           )}
         </main>
+
+        {/* Create Room Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md mx-4">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Create New Room
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowCreateModal(false)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="room-name">Room Name</Label>
+                  <Input
+                    id="room-name"
+                    value={newRoom.name}
+                    onChange={(e) => setNewRoom(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter room name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="room-description">Description</Label>
+                  <Input
+                    id="room-description"
+                    value={newRoom.description}
+                    onChange={(e) => setNewRoom(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Enter room description"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="room-language">Primary Language</Label>
+                  <select
+                    id="room-language"
+                    value={newRoom.language}
+                    onChange={(e) => setNewRoom(prev => ({ ...prev, language: e.target.value }))}
+                    className="w-full p-2 border border-input rounded-md bg-background"
+                  >
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="Python">Python</option>
+                    <option value="TypeScript">TypeScript</option>
+                  </select>
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleCreateRoom}
+                    disabled={loading || !newRoom.name.trim()}
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {loading ? "Creating..." : "Create Room"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Join Room Modal */}
+        {showJoinModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md mx-4">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  Join Room
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowJoinModal(false)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="join-code">Join Code</Label>
+                  <Input
+                    id="join-code"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="Enter 6-digit code"
+                    maxLength={6}
+                    className="font-mono text-center text-lg tracking-widest"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter the 6-digit alphanumeric code provided by the room creator
+                  </p>
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowJoinModal(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleJoinRoom}
+                    disabled={loading || joinCode.length !== 6}
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    {loading ? "Joining..." : "Join Room"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </ProtectedRoute>
   )

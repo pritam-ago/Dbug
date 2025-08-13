@@ -63,44 +63,51 @@ export function ChatRoom({
         </div>
         <div className="flex items-center gap-1 mt-2">
           <Users className="h-3 w-3 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">{onlineUsers.join(", ")}</span>
+          <span className="text-xs text-muted-foreground">
+            {Array.isArray(onlineUsers) ? onlineUsers.join(", ") : 'Online'}
+          </span>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {chatMessages.map((message) => (
-          <div key={message.id} className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-xs font-medium ${
-                  message.type === "ai"
-                    ? "text-blue-500"
-                    : message.type === "system"
-                      ? "text-green-500"
-                      : message.user === "You"
-                        ? "text-purple-500"
-                        : "text-foreground"
+        {chatMessages.map((message) => {
+          const displayName = message.username || message.user || 'Unknown'
+          const isCurrentUser = displayName === "You" || (message.userId && message.userId === "You")
+          
+          return (
+            <div key={message.id} className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`text-xs font-medium ${
+                    message.type === "ai"
+                      ? "text-blue-500"
+                      : message.type === "system"
+                        ? "text-green-500"
+                        : isCurrentUser
+                          ? "text-purple-500"
+                          : "text-foreground"
+                  }`}
+                >
+                  {displayName}
+                </span>
+                <span className="text-xs text-muted-foreground">{formatTime(message.timestamp)}</span>
+              </div>
+              <Card
+                className={`p-3 ${
+                  isCurrentUser
+                    ? "bg-primary/10 ml-4"
+                    : message.type === "ai"
+                      ? "bg-blue-50 dark:bg-blue-950/20"
+                      : message.type === "system"
+                        ? "bg-green-50 dark:bg-green-950/20"
+                        : ""
                 }`}
               >
-                {message.user}
-              </span>
-              <span className="text-xs text-muted-foreground">{formatTime(message.timestamp)}</span>
+                <p className="text-sm text-foreground">{message.message}</p>
+              </Card>
             </div>
-            <Card
-              className={`p-3 ${
-                message.user === "You"
-                  ? "bg-primary/10 ml-4"
-                  : message.type === "ai"
-                    ? "bg-blue-50 dark:bg-blue-950/20"
-                    : message.type === "system"
-                      ? "bg-green-50 dark:bg-green-950/20"
-                      : ""
-              }`}
-            >
-              <p className="text-sm text-foreground">{message.message}</p>
-            </Card>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className="p-4 border-t">

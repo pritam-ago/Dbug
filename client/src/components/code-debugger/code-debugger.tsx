@@ -100,9 +100,14 @@ const mockFileTree: FileNode[] = [
 interface CodeDebuggerProps {
   repoFullName?: string
   branch?: string
+  isRoomMode?: boolean
+  roomId?: string
+  chatMessages?: ChatMessage[]
+  onlineUsers?: string[]
+  onSendMessage?: (message: string) => void
 }
 
-export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
+export function CodeDebugger({ repoFullName, branch, isRoomMode = false, roomId, chatMessages: roomChatMessages, onlineUsers: roomOnlineUsers, onSendMessage }: CodeDebuggerProps) {
   const [openFiles, setOpenFiles] = useState<OpenFile[]>([])
   const [activeFileIndex, setActiveFileIndex] = useState(0)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -117,7 +122,7 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
   const [terminalOutput, setTerminalOutput] = useState<string[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [isChatOpen, setIsChatOpen] = useState(false)
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(isRoomMode ? (roomChatMessages || []) : [
     {
       id: "1",
       user: "System",
@@ -140,7 +145,7 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
       type: "user",
     },
   ])
-  const [onlineUsers] = useState(["Alice", "Bob", "Charlie", "You"])
+  const [onlineUsers, setOnlineUsers] = useState(isRoomMode ? (roomOnlineUsers || []) : ["Alice", "Bob", "Charlie", "You"])
   const [isImporting, setIsImporting] = useState(false)
 
   // Import repository when component mounts with repo info
@@ -149,6 +154,20 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
       importRepository(repoFullName, branch)
     }
   }, [repoFullName, branch])
+
+  // Update chat messages when room chat messages change
+  useEffect(() => {
+    if (isRoomMode && roomChatMessages) {
+      setChatMessages(roomChatMessages)
+    }
+  }, [isRoomMode, roomChatMessages])
+
+  // Update online users when room online users change
+  useEffect(() => {
+    if (isRoomMode && roomOnlineUsers) {
+      setOnlineUsers(roomOnlineUsers)
+    }
+  }, [isRoomMode, roomOnlineUsers])
 
 
 
@@ -560,6 +579,13 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
   const sendMessage = (message: string) => {
     if (!message.trim()) return
 
+    if (isRoomMode && onSendMessage) {
+      // In room mode, send message through the room's socket
+      onSendMessage(message)
+      return
+    }
+
+    // Default AI chat behavior
     const newMessage: ChatMessage = {
       id: `msg-${Date.now()}`,
       user: "You",
@@ -607,6 +633,14 @@ export function CodeDebugger({ repoFullName, branch }: CodeDebuggerProps) {
       setIsPanelOpen(false)
     }
   }
+
+  // In room mode, default to showing chat instead of AI panel
+  useEffect(() => {
+    if (isRoomMode) {
+      setIsPanelOpen(false)
+      setIsChatOpen(true)
+    }
+  }, [isRoomMode])
 
   const currentFile = getCurrentFile()
 

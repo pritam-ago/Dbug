@@ -23,7 +23,9 @@ export interface OpenFile {
 
 export interface ChatMessage {
   id: string
-  user: string
+  user?: string // For backward compatibility
+  userId?: string // For room mode
+  username?: string // For room mode
   message: string
   timestamp: Date
   type: "user" | "system" | "ai"
