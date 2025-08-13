@@ -45,10 +45,7 @@ export async function POST(request: NextRequest) {
       ...settings,
     };
     
-    // Generate a unique join code
     let joinCode = generateJoinCode(8);
-    // Best-effort to avoid collisions before hitting unique index
-    // Try a few times; fallback to letting DB unique index enforce
     for (let attempts = 0; attempts < 3; attempts++) {
       const existing = await Project.findOne({ joinCode });
       if (!existing) break;

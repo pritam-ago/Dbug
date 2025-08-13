@@ -31,17 +31,14 @@ export async function POST(
 
     const userId = user._id.toString();
 
-    // Check if user is the owner
     if (project.isOwner(userId)) {
       return createForbiddenResponse('Project owners cannot leave. Transfer ownership or delete the project instead.');
     }
 
-    // Check if user is a collaborator
     if (!project.isCollaborator(userId)) {
       return createForbiddenResponse('You are not a collaborator on this project');
     }
 
-    // Remove user from collaborators
     const removed = project.removeCollaborator(userId);
     if (!removed) {
       return createErrorResponse('Failed to remove user from project', 500);

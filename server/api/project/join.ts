@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
       return createNotFoundResponse('Project');
     }
 
-    // If already owner or collaborator, just return project
     const userId = user._id.toString();
     if (!project.isOwner(userId) && !project.isCollaborator(userId)) {
       const added = project.addCollaborator(userId);

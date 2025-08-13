@@ -221,7 +221,6 @@ export function CodeDebugger() {
     const timestamp = new Date().toLocaleTimeString()
     setTerminalOutput((prev) => [...prev, `[${timestamp}] Running ${currentFile.name}...`, ""])
 
-    // Simulate code execution
     setTimeout(() => {
       const newOutput = [...terminalOutput]
 
@@ -251,7 +250,6 @@ export function CodeDebugger() {
 
   const handleAskAI = async () => {
     setIsAnalyzing(true)
-    // Close chat when AI panel opens
     setIsChatOpen(false)
 
     setTimeout(() => {
@@ -328,7 +326,6 @@ These are common edge cases that should be handled with proper input validation.
 
     setChatMessages((prev) => [...prev, newMessage])
 
-    // Simulate AI or team responses with deterministic timing
     const responses = [
       "That's a great question! Let me analyze the code...",
       "I see the issue. Try checking the validation logic on line 45.",
@@ -337,7 +334,6 @@ These are common edge cases that should be handled with proper input validation.
       "Let me run a quick analysis on that code section.",
     ]
 
-    // Use a simple counter instead of Math.random() for deterministic behavior
     const responseIndex = (chatMessages.length + 1) % responses.length
     const responseDelay = 1000 + ((chatMessages.length + 1) * 500) % 2000
 
@@ -356,7 +352,6 @@ These are common edge cases that should be handled with proper input validation.
 
   const toggleAIPanel = () => {
     setIsPanelOpen(!isPanelOpen)
-    // Close chat when AI panel opens
     if (!isPanelOpen) {
       setIsChatOpen(false)
     }
@@ -364,7 +359,6 @@ These are common edge cases that should be handled with proper input validation.
 
   const toggleChatRoom = () => {
     setIsChatOpen(!isChatOpen)
-    // Close AI panel when chat opens
     if (!isChatOpen) {
       setIsPanelOpen(false)
     }
@@ -530,7 +524,6 @@ These are common edge cases that should be handled with proper input validation.
           />
         </div>
 
-        {/* Right side panels - AI Panel and Chat Room */}
         <div className="flex-shrink-0">
           {isPanelOpen && (
             <AIDebuggerPanel
@@ -554,7 +547,6 @@ These are common edge cases that should be handled with proper input validation.
             />
           )}
 
-          {/* Toggle buttons column - always visible */}
           {!isPanelOpen && !isChatOpen && (
             <div className="w-12 border-l bg-card flex flex-col">
               <div className="p-3 border-b flex justify-center">
