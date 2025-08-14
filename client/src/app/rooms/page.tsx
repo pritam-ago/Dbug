@@ -16,6 +16,7 @@ import { Code, Users, Plus, ArrowLeft, LogOut, Clock, GitBranch, Settings, X, Ch
 
 interface Room {
   _id: string
+  id?: string
   name: string
   description: string
   joinCode: string
@@ -38,6 +39,7 @@ export default function RoomsPage() {
     language: "JavaScript"
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
   const [apiUrl] = useState(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000')
 
   useEffect(() => {
@@ -48,31 +50,21 @@ export default function RoomsPage() {
 
   const loadRooms = async () => {
     try {
-      // For now, we'll use mock data since we need to implement user ID handling
-      // In a real app, you'd fetch from the API using the user's ID
-      const mockRooms: Room[] = [
-        {
-          _id: "1",
-          name: "Frontend Bug Fix",
-          description: "Working on React component issues",
-          joinCode: "ABC123",
-          owner: "John Doe",
-          collaborators: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          _id: "2",
-          name: "API Integration",
-          description: "Debugging REST API endpoints",
-          joinCode: "DEF456",
-          owner: "Jane Smith",
-          collaborators: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+      // Get user email from session - NextAuth provides email, not ID
+      const userEmail = session?.user?.email
+      if (!userEmail) return
+
+      const response = await fetch(`${apiUrl}/api/rooms/user/${encodeURIComponent(userEmail)}`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setRooms(result.data)
+        } else {
+          console.error("Failed to load rooms:", result.error)
         }
-      ]
-      setRooms(mockRooms)
+      } else {
+        console.error("Failed to load rooms:", response.statusText)
+      }
     } catch (error) {
       console.error("Failed to load rooms:", error)
     }
@@ -82,28 +74,63 @@ export default function RoomsPage() {
     if (!newRoom.name.trim() || !session?.user) return
     
     setLoading(true)
+    setError("")
+    
     try {
-      // For now, create a mock room
-      // In a real app, you'd call the API
-      const room: Room = {
-        _id: Date.now().toString(),
-        name: newRoom.name,
-        description: newRoom.description,
-        joinCode: generateJoinCode(),
-        owner: session.user.name || "You",
-        collaborators: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+      const userEmail = session?.user?.email
+      if (!userEmail) {
+        setError("User not authenticated")
+        return
       }
-      
-      setRooms(prev => [room, ...prev])
-      setShowCreateModal(false)
-      setNewRoom({ name: "", description: "", language: "JavaScript" })
-      
-      // Navigate to the new room
-      router.push(`/rooms/${room._id}`)
+
+      const response = await fetch(`${apiUrl}/api/rooms/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newRoom.name.trim(),
+          description: newRoom.description.trim(),
+          language: newRoom.language,
+          userId: userEmail,
+          email: userEmail,
+          userName: session.user.name,
+          image: session.user.image
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Room creation response:', result)
+        console.log('Result data:', result.data)
+        console.log('Result data _id:', result.data?._id)
+        
+        if (result.success) {
+          // Add the new room to the list
+          setRooms(prev => [result.data, ...prev])
+          setShowCreateModal(false)
+          setNewRoom({ name: "", description: "", language: "JavaScript" })
+          
+          // Navigate to the new room
+          if (result.data?.id) {
+            router.push(`/rooms/${result.data.id}`)
+          } else if (result.data?._id) {
+            // Fallback to _id if id is not available
+            router.push(`/rooms/${result.data._id}`)
+          } else {
+            console.error('Room ID is undefined, cannot navigate')
+            setError('Room created but ID is missing')
+          }
+        } else {
+          setError(result.error || "Failed to create room")
+        }
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || `Failed to create room: ${response.status}`)
+      }
     } catch (error) {
       console.error("Failed to create room:", error)
+      setError("Network error. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -113,25 +140,60 @@ export default function RoomsPage() {
     if (!joinCode.trim() || !session?.user) return
     
     setLoading(true)
+    setError("")
+    
     try {
-      // For now, navigate to a mock room
-      // In a real app, you'd call the API to join
-      const roomId = "joined-" + Date.now()
-      router.push(`/rooms/${roomId}`)
+      const userEmail = session?.user?.email
+      if (!userEmail) {
+        setError("User not authenticated")
+        return
+      }
+
+      const response = await fetch(`${apiUrl}/api/rooms/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: joinCode.trim().toUpperCase(),
+          userId: userEmail,
+          email: userEmail,
+          userName: session.user.name,
+          image: session.user.image
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          // Refresh rooms list to include the joined room
+          await loadRooms()
+          setShowJoinModal(false)
+          setJoinCode("")
+          
+          // Navigate to the joined room
+          if (result.data?.id) {
+            router.push(`/rooms/${result.data.id}`)
+          } else if (result.data?._id) {
+            // Fallback to _id if id is not available
+            router.push(`/rooms/${result.data._id}`)
+          } else {
+            console.error('Room ID is undefined, cannot navigate')
+            setError('Room joined but ID is missing')
+          }
+        } else {
+          setError(result.error || "Failed to join room")
+        }
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || `Failed to join room: ${response.status}`)
+      }
     } catch (error) {
       console.error("Failed to join room:", error)
+      setError("Network error. Please try again.")
     } finally {
       setLoading(false)
     }
-  }
-
-  const generateJoinCode = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-    let result = ''
-    for (let i = 0; i < 6; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length))
-    }
-    return result
   }
 
   const handleSignOut = () => {
@@ -228,6 +290,24 @@ export default function RoomsPage() {
             </div>
           </div>
 
+          {/* Error Display */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
+                <X className="w-4 h-4" />
+                <span className="text-sm font-medium">{error}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setError("")}
+                  className="ml-auto h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {rooms.map((room) => (
               <Card key={room._id} className="bg-card/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer">
@@ -268,7 +348,7 @@ export default function RoomsPage() {
                     <Button 
                       size="sm" 
                       className="bg-indigo-600 hover:bg-indigo-700"
-                      onClick={() => router.push(`/rooms/${room._id}`)}
+                      onClick={() => router.push(`/rooms/${room.id || room._id}`)}
                     >
                       Join Room
                     </Button>

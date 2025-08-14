@@ -3,14 +3,16 @@ import mongoose from 'mongoose'
 const userSchema = new mongoose.Schema({
   githubId: {
     type: String,
-    required: true,
+    required: false,
     unique: true,
+    sparse: true,
     index: true
   },
   githubUsername: {
     type: String,
-    required: true,
+    required: false,
     unique: true,
+    sparse: true,
     index: true
   },
   email: {
@@ -25,11 +27,11 @@ const userSchema = new mongoose.Schema({
   },
   avatarUrl: {
     type: String,
-    required: true
+    required: false
   },
   provider: {
     type: String,
-    default: 'github'
+    default: 'nextauth'
   },
   lastSignIn: {
     type: Date,
@@ -47,9 +49,9 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 })
 
-// Ensure unique indexes
-userSchema.index({ githubId: 1 }, { unique: true })
-userSchema.index({ githubUsername: 1 }, { unique: true })
+// Ensure unique indexes with sparse option for optional fields
+userSchema.index({ githubId: 1 }, { unique: true, sparse: true })
+userSchema.index({ githubUsername: 1 }, { unique: true, sparse: true })
 userSchema.index({ email: 1 }, { unique: true })
 
 const User = mongoose.models.User || mongoose.model('User', userSchema)

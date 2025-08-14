@@ -16,6 +16,36 @@ function generateJoinCode(length: number = 6): string {
   return code
 }
 
+// Helper function to get or create user
+async function getOrCreateUser(userId: string, userData: any) {
+  let user = null
+  
+  // First try to find by email (most common case for NextAuth)
+  if (userId.includes('@')) {
+    user = await User.findOne({ email: userId })
+  } else {
+    // Try to find by ObjectId if it's a valid MongoDB ObjectId
+    try {
+      user = await User.findById(userId)
+    } catch (error) {
+      // Invalid ObjectId, continue to email search
+    }
+  }
+  
+  if (!user) {
+    // Create new user from NextAuth session data
+    user = new User({
+      email: userData.email || userId,
+      name: userData.userName || userData.name || 'Anonymous User',
+      avatarUrl: userData.image || '',
+      provider: 'nextauth'
+    })
+    await user.save()
+  }
+  
+  return user
+}
+
 // Create a new room
 router.post('/create', async (req, res) => {
   try {
@@ -27,10 +57,8 @@ router.post('/create', async (req, res) => {
     
     await connectToDatabase()
     
-    const user = await User.findById(userId)
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' })
-    }
+    // Get or create user
+    const user = await getOrCreateUser(userId, req.body)
     
     let joinCode = generateJoinCode(6)
     for (let attempts = 0; attempts < 3; attempts++) {
@@ -56,45 +84,25 @@ router.post('/create', async (req, res) => {
     const room = new Project(roomData)
     await room.save()
     
+    // Convert to JSON to get the transformed document with virtual fields
+    const roomObject = room.toJSON()
+    console.log('Created room object:', roomObject)
+    console.log('Room id:', roomObject.id)
+    console.log('Room _id:', roomObject._id)
+    
+    // Ensure we have an ID field for the client
+    if (!roomObject.id && roomObject._id) {
+      roomObject.id = roomObject._id.toString()
+    }
+    
     return res.status(201).json({
       success: true,
-      data: room,
+      data: roomObject,
       message: 'Room created successfully'
     })
   } catch (error) {
+    console.error('Error creating room:', error)
     return res.status(500).json({ error: `Failed to create room: ${error}` })
-  }
-})
-
-// Get user's rooms
-router.get('/user/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params
-    
-    if (!userId) {
-      return res.status(400).json({ error: 'User ID is required' })
-    }
-    
-    await connectToDatabase()
-    
-    const user = await User.findById(userId)
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' })
-    }
-    
-    const rooms = await Project.find({
-      $or: [
-        { owner: user._id },
-        { collaborators: user._id }
-      ]
-    }).sort({ createdAt: -1 })
-    
-    return res.status(200).json({
-      success: true,
-      data: rooms
-    })
-  } catch (error) {
-    return res.status(500).json({ error: `Failed to fetch rooms: ${error}` })
   }
 })
 
@@ -109,10 +117,8 @@ router.post('/join', async (req, res) => {
     
     await connectToDatabase()
     
-    const user = await User.findById(userId)
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' })
-    }
+    // Get or create user
+    const user = await getOrCreateUser(userId, req.body)
     
     const normalized = code.trim().toUpperCase()
     const room = await Project.findOne({ joinCode: normalized })
@@ -135,16 +141,51 @@ router.post('/join', async (req, res) => {
       message: 'Joined room successfully'
     })
   } catch (error) {
+    console.error('Error joining room:', error)
     return res.status(500).json({ error: `Failed to join room: ${error}` })
   }
 })
 
-// Get room by ID
+// Get user's rooms - MUST come before /:roomId route
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' })
+    }
+    
+    await connectToDatabase()
+    
+    // Get or create user
+    const user = await getOrCreateUser(userId, {})
+    
+    const rooms = await Project.find({
+      $or: [
+        { owner: user._id },
+        { collaborators: user._id }
+      ]
+    }).sort({ createdAt: -1 })
+    
+    return res.status(200).json({
+      success: true,
+      data: rooms
+    })
+  } catch (error) {
+    console.error('Error fetching rooms:', error)
+    return res.status(500).json({ error: `Failed to fetch rooms: ${error}` })
+  }
+})
+
+// Get room by ID - MUST come after more specific routes
 router.get('/:roomId', async (req, res) => {
   try {
     const { roomId } = req.params
     
-    if (!roomId) {
+    console.log('GET /:roomId - roomId:', roomId)
+    console.log('GET /:roomId - req.params:', req.params)
+    
+    if (!roomId || roomId === 'undefined') {
       return res.status(400).json({ error: 'Room ID is required' })
     }
     
@@ -160,6 +201,7 @@ router.get('/:roomId', async (req, res) => {
       data: room
     })
   } catch (error) {
+    console.error('Error fetching room:', error)
     return res.status(500).json({ error: `Failed to fetch room: ${error}` })
   }
 })
