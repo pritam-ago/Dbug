@@ -5,21 +5,18 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: false,
     unique: true,
-    sparse: true,
-    index: true
+    sparse: true
   },
   githubUsername: {
     type: String,
     required: false,
     unique: true,
-    sparse: true,
-    index: true
+    sparse: true
   },
   email: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   name: {
     type: String,
